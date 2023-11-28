@@ -90,7 +90,11 @@ if __name__ == '__main__':
 You can install the CLI with the following [pipx](https://pypa.github.io/pipx/) command,
 
 ```bash
-pipx install --upgrade aiornot
+# For fresh install
+pipx install aiornot
+
+# For upgrade
+pipx upgrade aiornot
 ```
 
 The CLI also looks for the `AIORNOT_API_KEY` environment variable. But it will also
