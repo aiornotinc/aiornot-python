@@ -42,28 +42,28 @@ from aiornot import Client
 client = Client()
 
 # Classify an image by url
-client.classify_image_by_url('https://thispersondoesnotexist.com')
+resp = client.classify_image_by_url('https://thispersondoesnotexist.com')
 
 # Classify an image by path
-client.classify_image_by_path('path/to/image.jpg')
+resp = client.classify_image_by_path('path/to/image.jpg')
 
 # Classify audio by url
-client.classify_audio_by_url('https://www.youtube.com/watch?v=v4WiI4es_UI')
+resp = client.classify_audio_by_url('https://www.youtube.com/watch?v=v4WiI4es_UI')
 
 # Classify audio by path
-client.classify_audio_by_path('path/to/audio.mp3')
+resp = client.classify_audio_by_path('path/to/audio.mp3')
 
 # Check your token
-client.check_token()
+resp = client.check_token()
 
 # Refresh your token
-client.refresh_token()
+resp = client.refresh_token()
 
 # Revoke your token
-client.revoke_token()
+resp = client.revoke_token()
 
 # Check if the API is up
-client.check_api()
+resp = client.check_api()
 ```
 
 There is also an async client that follows the same API as the sync client, but with async methods.
