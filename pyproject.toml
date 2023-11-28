@@ -1,9 +1,15 @@
 [tool.poetry]
 name = "aiornot"
-version = "0.0.1"
-description = ""
+version = "0.0.2"
+homepage = "https://aiornot.com/"
+repository = "https://github.com/aiornotinc/aiornot-python"
+documentation = "https://github.com/aiornotinc/aiornot-python"
+keywords = ["ai detection", "aiornot", "generative ai", "genai"]
+description = "Python client for the AIORNOT API."
+license = "MIT"
 authors = ["aiornot <support@aiornot.com>"]
 readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
