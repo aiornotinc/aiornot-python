@@ -1,4 +1,7 @@
+![AIORNOT Logo](./centered_logo_32x32.png)
 # AIORNOT Python Client
+
+[![PyPI version](https://badge.fury.io/py/aiornot.svg)](https://badge.fury.io/py/aiornot)
 
 This is a Python client for the [AIORNOT](https://aiornot.com) API.
 
@@ -19,7 +22,7 @@ AIORNOT_API_KEY=your_api_key
 ```
 
 > [!WARNING]  
-> Never share your API key with anyone. It is a secret.*
+> Never share your API key with anyone. It is a secret.
 
 ## Setup and Installation
 
