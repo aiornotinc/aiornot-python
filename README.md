@@ -18,7 +18,8 @@ to use the client you will need to set the `AIORNOT_API_KEY` environment variabl
 AIORNOT_API_KEY=your_api_key
 ```
 
-**Never share your API key with anyone. It is a secret.**
+> [!WARNING]  
+> Never share your API key with anyone. It is a secret.*
 
 ## Setup and Installation
 
