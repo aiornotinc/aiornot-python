@@ -5,7 +5,7 @@ from datetime import datetime
 
 class BaseReport(BaseModel):
     is_detected: bool
-    confidence: float | None = None
+    confidence: float = -1
 
 
 class ImageReport(BaseModel):
@@ -17,7 +17,7 @@ class ImageReport(BaseModel):
 class Facet(BaseModel):
     is_detected: bool
     version: str
-    confidence: float | None = None
+    confidence: float = -1
 
 
 class ImageResp(BaseModel):
