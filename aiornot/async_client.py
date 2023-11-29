@@ -13,7 +13,7 @@ from aiornot.resp_types import (
     RevokeTokenResp,
 )
 from aiornot.settings import API_KEY, API_KEY_ERR, BASE_URL
-from typing import cast
+from typing import cast, Optional, Union
 import aiofiles
 import httpx
 from pathlib import Path
@@ -25,9 +25,9 @@ _SHARED_CLIENT = httpx.AsyncClient()
 class AsyncClient:
     def __init__(
         self,
-        api_key: str | None = None,
-        base_url: str | None = None,
-        client: httpx.AsyncClient | None = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        client: Optional[httpx.AsyncClient] = None,
     ):
         self._api_key = cast(str, api_key or API_KEY)
         if not self._api_key:
@@ -50,7 +50,7 @@ class AsyncClient:
         resp.raise_for_status()
         return ImageResp(**resp.json())
 
-    async def image_report_by_file(self, file_path: str | Path) -> ImageResp:
+    async def image_report_by_file(self, file_path: Union[str, Path]) -> ImageResp:
         async with aiofiles.open(file_path, "rb") as f:
             return await self.image_report_by_blob(await f.read())
 
@@ -64,7 +64,7 @@ class AsyncClient:
         resp.raise_for_status()
         return AudioResp(**resp.json())
 
-    async def audio_report_by_file(self, file_path: str | Path) -> AudioResp:
+    async def audio_report_by_file(self, file_path: Union[str, Path]) -> AudioResp:
         async with aiofiles.open(file_path, "rb") as f:
             return await self.audio_report_by_blob(await f.read())
 

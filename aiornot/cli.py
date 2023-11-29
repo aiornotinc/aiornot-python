@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from aiornot.sync_client import Client
 from pydantic import BaseModel
+from typing import Optional
 
 
 @click.group()
@@ -109,7 +110,7 @@ def config():
     _save_api_key(api_key)
 
 
-def _load_api_key() -> str | None:
+def _load_api_key() -> Optional[str]:
     token = os.getenv("AIORNOT_API_TOKEN")
     if token is not None:
         return token

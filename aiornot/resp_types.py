@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, Optional
 from datetime import datetime
 
 
@@ -32,7 +32,7 @@ class ImageResp(BaseModel):
 
 class CheckTokenResp(BaseModel):
     is_valid: bool
-    expires_at: str | None = None
+    expires_at: Optional[str] = None
 
 
 class RefreshTokenResp(BaseModel):

@@ -1,6 +1,6 @@
 import httpx
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Union
 from aiornot.req_builders import (
     classify_audio_blob_args,
     classify_audio_url_args,
@@ -15,15 +15,15 @@ from aiornot.resp_types import (
     RefreshTokenResp,
     RevokeTokenResp,
 )
-from aiornot.settings import API_KEY, API_KEY_ERR, BASE_URL
+from aiornot.settings import API_KEY_ERR, BASE_URL
 
 
 class Client:
     def __init__(
         self,
-        api_key: str | None = API_KEY,
-        client: httpx.Client | None = None,
-        base_url: str = BASE_URL,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        client: Optional[httpx.Client] = None,
     ):
         if api_key is None:
             raise RuntimeError(API_KEY_ERR)
@@ -52,7 +52,7 @@ class Client:
         resp.raise_for_status()
         return ImageResp(**resp.json())
 
-    def image_report_by_file(self, file_path: str | Path) -> ImageResp:
+    def image_report_by_file(self, file_path: Union[str, Path]) -> ImageResp:
         with open(file_path, "rb") as f:
             return self.image_report_by_blob(f.read())
 
@@ -66,7 +66,7 @@ class Client:
         resp.raise_for_status()
         return AudioResp(**resp.json())
 
-    def audio_report_by_file(self, file_path: str | Path) -> AudioResp:
+    def audio_report_by_file(self, file_path: Union[str, Path]) -> AudioResp:
         with open(file_path, "rb") as f:
             return self.audio_report_by_blob(f.read())
 
