@@ -2,6 +2,7 @@
 # AIORNOT Python Client
 
 [![PyPI version](https://badge.fury.io/py/aiornot.svg)](https://badge.fury.io/py/aiornot)
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v2/monitor/y3x3.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
 This is a Python client for the [AIORNOT](https://aiornot.com) API.
 
