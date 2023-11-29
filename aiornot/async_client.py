@@ -16,9 +16,10 @@ from aiornot.settings import API_KEY, API_KEY_ERR, BASE_URL
 from typing import cast
 import aiofiles
 import httpx
-
-
 from pathlib import Path
+
+
+_SHARED_CLIENT = httpx.AsyncClient()
 
 
 class AsyncClient:
@@ -32,7 +33,7 @@ class AsyncClient:
         if not self._api_key:
             raise ValueError(API_KEY_ERR)
         self._base_url = base_url or BASE_URL
-        self._client = client or httpx.AsyncClient()
+        self._client = client or _SHARED_CLIENT
 
     async def is_live(self) -> bool:
         resp = await self._client.get(**is_live_args(self._base_url))

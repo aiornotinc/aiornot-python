@@ -28,7 +28,7 @@ class Client:
         if api_key is None:
             raise RuntimeError(API_KEY_ERR)
         self._api_key = api_key
-        self._client = client or httpx.Client()
+        self._client = client or httpx
         self._base_url = base_url
 
     def _sync_get_json(self, args: dict[str, Any]) -> dict[str, Any]:
