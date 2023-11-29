@@ -1,4 +1,4 @@
-![AIORNOT Logo](./centered_logo_32x32.png)
+![AIORNOT Logo](./media/centered_logo_32x32.png)
 # AIORNOT Python Client
 
 ![Tests](https://github.com/aiornotinc/aiornot-python/actions/workflows/test.yaml/badge.svg)
@@ -9,33 +9,59 @@ This is a Python client for the [AIORNOT](https://aiornot.com) API.
 
 # Getting Started
 
-## Registration and API Key
+## Account Registration and API Key Generation
 
-Register for an account at [AIORNOT](https://aiornot.com). Then, install the python client,
+Register for an account at [AIORNOT](https://aiornot.com). After creating an account,
+you can generate an API key via your [dashboard](https://aiornot.com/dashboard/api). If you
+just created your account, the page looks like,
+
+![](./media/no_existing_keys.png)
+
+Click the `Request API Key` button to generate a new API key. After generating a key, the page
+looks like,
+
+![](./media/copy.png)
+
+Press the `Copy API Key` button to copy the key to your clipboard. If you already have
+generated an API key, the page looks like,
+
+![](./media/refresh.png)
+
+Press the `Refresh API Key` button to generate a new API key. Then press the `Copy API Key` button
+to copy the key to your clipboard.
+
+> [!WARNING]  
+> Never share your API key with anyone. It is like a password.
+
+## Installing the Python Package
+
+To install the python package, run the following command,
 
 ```bash
 pip install aiornot
 ```
 
-to use the client you will need to set the `AIORNOT_API_KEY` environment variable to your API key. You can find your API key on your [AIORNOT dashboard](https://aiornot.com/dashboard/api).
+Using the client requires an API key. You can set the API key in two ways. 
+
+The easier and more flexible way is to set an environment variable,
 
 ```bash
 AIORNOT_API_KEY=your_api_key
 ```
 
-> [!WARNING]  
-> Never share your API key with anyone. It is a secret.
-
-## Setup and Installation
-
-
-If you cannot set the environment variable, you can pass it in as an argument to the client,
+Otherwise, you can pass the api key in as an argument to the client,
 
 ```python
-client = AIOrNot(api_key='your_api_key')
+from aiornot import Client, AsyncClient
+
+
+client = Client(api_key='your_api_key')               # sync client
+async_client = AsyncClient(api_key='your_api_key')    # async client
 ```
 
-## Code Examples
+Failure to set either the environment variable or the api key argument will result in a runtime error.
+
+## View from 10,000 feet
 
 ```python
 from aiornot import Client
@@ -68,7 +94,7 @@ resp = client.revoke_token()
 resp = client.check_api()
 ```
 
-There is also an async client that follows the same API as the sync client, but with async methods.
+There is also an async client that has the same methods as the sync client, but as coroutines.
 
 ```python
 import asyncio
@@ -82,6 +108,7 @@ async def main():
     else:
         print('API is down :(')
 
+
 if __name__ == '__main__':
     asyncio.run(main())
 ```
@@ -89,7 +116,7 @@ if __name__ == '__main__':
 
 ## CLI Usage
 
-You can install the CLI with the following [pipx](https://pypa.github.io/pipx/) command,
+AIOrNot also comes with a CLI. You can use it easily via a [pipx](https://pypa.github.io/pipx/) installation,
 
 ```bash
 # For fresh install
@@ -116,6 +143,9 @@ aionot
 the two most useful ones being,
 
 ```bash
+# Classify an image by url or path
 aiornot image [url|path]
+
+# Classify audio by url or path
 aionot audio [text]
 ```
