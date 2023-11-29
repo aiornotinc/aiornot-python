@@ -90,7 +90,7 @@ class Client:
             },
         )
         resp.raise_for_status()
-        return RefreshTokenResp(**resp.json()).token
+        return RefreshTokenResp(**resp.json())
 
     def revoke_token(self) -> RevokeTokenResp:
         resp = self._client.delete(

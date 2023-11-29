@@ -1,8 +1,19 @@
-from aiornot.req_builders import classify_audio_blob_args, classify_audio_url_args, classify_image_blob_args, classify_image_url_args, is_live_args
-from aiornot.resp_types import AudioResp, CheckTokenResp, ImageResp, RefreshTokenResp, RevokeTokenResp
+from aiornot.req_builders import (
+    classify_audio_blob_args,
+    classify_audio_url_args,
+    classify_image_blob_args,
+    classify_image_url_args,
+    is_live_args,
+)
+from aiornot.resp_types import (
+    AudioResp,
+    CheckTokenResp,
+    ImageResp,
+    RefreshTokenResp,
+    RevokeTokenResp,
+)
 from aiornot.settings import API_KEY, API_KEY_ERR, BASE_URL
-
-
+from typing import cast
 import aiofiles
 import httpx
 
@@ -13,11 +24,11 @@ from pathlib import Path
 class AsyncClient:
     def __init__(
         self,
-        api_key: str = None,
-        base_url: str = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
         client: httpx.AsyncClient | None = None,
     ):
-        self._api_key = api_key or API_KEY
+        self._api_key = cast(str, api_key or API_KEY)
         if not self._api_key:
             raise ValueError(API_KEY_ERR)
         self._base_url = base_url or BASE_URL
@@ -54,7 +65,7 @@ class AsyncClient:
 
     async def audio_report_by_file(self, file_path: str | Path) -> AudioResp:
         async with aiofiles.open(file_path, "rb") as f:
-            return self.audio_report_by_blob(await f.read())
+            return await self.audio_report_by_blob(await f.read())
 
     async def check_token(self) -> CheckTokenResp:
         resp = await self._client.get(
@@ -76,7 +87,7 @@ class AsyncClient:
             },
         )
         resp.raise_for_status()
-        return RefreshTokenResp(**resp.json()).token
+        return RefreshTokenResp(**resp.json())
 
     async def revoke_token(self) -> RevokeTokenResp:
         resp = await self._client.delete(
