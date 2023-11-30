@@ -4,4 +4,3 @@ example.json
 .vscode
 .envrc
 dist/
-example.py
