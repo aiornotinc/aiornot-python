@@ -17,6 +17,7 @@ from typing import cast, Optional, Union
 import aiofiles
 import httpx
 from pathlib import Path
+import aiornot.common_client as cc
 
 
 _SHARED_CLIENT = httpx.AsyncClient()
@@ -31,72 +32,70 @@ class AsyncClient:
     ):
         self._api_key = cast(str, api_key or API_KEY)
         if not self._api_key:
-            raise ValueError(API_KEY_ERR)
+            raise RuntimeError(API_KEY_ERR)
         self._base_url = base_url or BASE_URL
         self._client = client or _SHARED_CLIENT
 
     async def is_live(self) -> bool:
-        resp = await self._client.get(**is_live_args(self._base_url))
-        resp.raise_for_status()
-        return resp.json()["is_live"]
+        return cc.is_live(await self._client.get(**is_live_args(self._base_url)))
 
     async def image_report_by_url(self, url: str) -> ImageResp:
-        resp = await self._client.post(**classify_image_url_args(url, self._api_key))
-        resp.raise_for_status()
-        return ImageResp(**resp.json())
+        return cc.image_report(
+            await self._client.post(**classify_image_url_args(url, self._api_key))
+        )
 
     async def image_report_by_blob(self, data: bytes) -> ImageResp:
-        resp = await self._client.post(**classify_image_blob_args(data, self._api_key))
-        resp.raise_for_status()
-        return ImageResp(**resp.json())
+        return cc.image_report(
+            await self._client.post(**classify_image_blob_args(data, self._api_key))
+        )
 
     async def image_report_by_file(self, file_path: Union[str, Path]) -> ImageResp:
         async with aiofiles.open(file_path, "rb") as f:
             return await self.image_report_by_blob(await f.read())
 
     async def audio_report_by_url(self, url: str) -> AudioResp:
-        resp = await self._client.post(**classify_audio_url_args(url, self._api_key))
-        resp.raise_for_status()
-        return AudioResp(**resp.json())
+        return cc.audio_report(
+            await self._client.post(**classify_audio_url_args(url, self._api_key))
+        )
 
     async def audio_report_by_blob(self, data: bytes) -> AudioResp:
-        resp = await self._client.post(**classify_audio_blob_args(data, self._api_key))
-        resp.raise_for_status()
-        return AudioResp(**resp.json())
+        return cc.audio_report(
+            await self._client.post(**classify_audio_blob_args(data, self._api_key))
+        )
 
     async def audio_report_by_file(self, file_path: Union[str, Path]) -> AudioResp:
         async with aiofiles.open(file_path, "rb") as f:
             return await self.audio_report_by_blob(await f.read())
 
     async def check_token(self) -> CheckTokenResp:
-        resp = await self._client.get(
-            f"{BASE_URL}/credentials/tokens",
-            timeout=10,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-            },
+        return cc.check_token(
+            await self._client.get(
+                f"{BASE_URL}/credentials/tokens",
+                timeout=10,
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                },
+            )
         )
-        resp.raise_for_status()
-        return CheckTokenResp(**resp.json())
 
     async def refresh_token(self) -> RefreshTokenResp:
-        resp = await self._client.put(
-            f"{BASE_URL}/credentials/tokens",
-            timeout=10,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-            },
+        return cc.refresh_token(
+            await self._client.put(
+                f"{BASE_URL}/credentials/tokens",
+                timeout=10,
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                },
+            )
         )
-        resp.raise_for_status()
-        return RefreshTokenResp(**resp.json())
 
     async def revoke_token(self) -> RevokeTokenResp:
-        resp = await self._client.delete(
-            f"{BASE_URL}/credentials/tokens",
-            timeout=10,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-            },
+        return cc.revoke_token(
+            await self._client.delete(
+                f"{BASE_URL}/credentials/tokens",
+                timeout=10,
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                },
+            )
         )
-        resp.raise_for_status()
-        return RevokeTokenResp(**resp.json())

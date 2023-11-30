@@ -70,16 +70,16 @@ from aiornot import Client
 client = Client()
 
 # Classify an image by url
-resp = client.classify_image_by_url('https://thispersondoesnotexist.com')
+resp = client.image_report_by_url('https://thispersondoesnotexist.com')
 
 # Classify an image by path
-resp = client.classify_image_by_path('path/to/image.jpg')
+resp = client.image_report_by_file('path/to/image.jpg')
 
 # Classify audio by url
-resp = client.classify_audio_by_url('https://www.youtube.com/watch?v=v4WiI4es_UI')
+resp = client.audio_report_by_url('https://www.youtube.com/watch?v=v4WiI4es_UI')
 
 # Classify audio by path
-resp = client.classify_audio_by_path('path/to/audio.mp3')
+resp = client.audio_report_by_file('path/to/audio.mp3')
 
 # Check your token
 resp = client.check_token()
@@ -91,7 +91,7 @@ resp = client.refresh_token()
 resp = client.revoke_token()
 
 # Check if the API is up
-resp = client.check_api()
+resp = client.is_live()
 ```
 
 There is also an async client that has the same methods as the sync client, but as coroutines.

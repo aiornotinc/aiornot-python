@@ -102,7 +102,7 @@ def config():
     while True:
         api_key = click.prompt("API key")
         client = Client(api_key=api_key)
-        if client.check_token():
+        if client.check_token().is_valid:
             break
         else:
             click.echo("Invalid API key. Please try again.")
