@@ -12,6 +12,8 @@ class ImageReport(BaseModel):
     verdict: Literal["ai", "human"]
     ai: BaseReport
     human: BaseReport
+    # Generator is an empty dict if the image is human
+    generator: dict[str, BaseReport] = Field(default_factory=dict)
 
 
 class Facet(BaseModel):
