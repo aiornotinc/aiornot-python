@@ -38,6 +38,10 @@ to copy the key to your clipboard.
 To install the python package, run the following command,
 
 ```bash
+# If using uv (recommended)
+uv add aiornot
+
+# If using pip
 pip install aiornot
 ```
 
@@ -116,14 +120,17 @@ if __name__ == '__main__':
 
 ## CLI Usage
 
-AIOrNot also comes with a CLI. You can use it easily via a [pipx](https://pypa.github.io/pipx/) installation,
+AIOrNot also comes with a CLI. You can use it easily via [uv](https://docs.astral.sh/uv/),
 
 ```bash
 # For fresh install
-pipx install aiornot
+uvx aiornot
+
+# Or install globally
+uv tool install aiornot
 
 # For upgrade
-pipx upgrade aiornot
+uv tool upgrade aiornot
 ```
 
 The CLI also looks for the `AIORNOT_API_KEY` environment variable. But it will also
@@ -131,21 +138,21 @@ look for a `~/.aiornot/config.json` file if the environment variable is not set.
 set it up, run the following command,
 
 ```bash
-aiornot token config
-``````
+uvx aiornot token config
+```
 
 and follow the prompts. Afterwards, you can see a menu of commands with,
 
 ```bash
-aionot
+uvx aiornot
 ```
 
 the two most useful ones being,
 
 ```bash
 # Classify an image by url or path
-aiornot image [url|path]
+uvx aiornot image [url|path]
 
 # Classify audio by url or path
-aionot audio [text]
+uvx aiornot audio [text]
 ```
