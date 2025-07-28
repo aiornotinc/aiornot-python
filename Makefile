@@ -1,5 +1,5 @@
 format:
-	black ./aiornot ./tests && ruff --fix ./aiornot ./tests
+	black ./aiornot ./tests && ruff check --fix ./aiornot ./tests
 
 lint:
-	black --check ./aiornot ./tests && ruff ./aiornot ./tests && mypy --install-types --non-interactive ./aiornot ./tests
+	black --check ./aiornot ./tests && ruff check ./aiornot ./tests && mypy --install-types --non-interactive ./aiornot ./tests

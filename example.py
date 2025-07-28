@@ -18,13 +18,15 @@ def sync_example():
         print("Token is invalid")
         exit(1)
 
-    # Classify an image by url
-    resp = client.image_report_by_url("https://thispersondoesnotexist.com")
-    pprint(resp)
-
-    # Classify audio by url
-    resp = client.audio_report_by_url("https://www.youtube.com/watch?v=v4WiI4es_UI")
-    pprint(resp)
+    # Classify an image by file
+    resp = client.image_report_by_file_sync("example_image.jpg")
+    pprint(resp.model_dump())
+    
+    # Check if it's AI generated
+    if resp.is_ai():
+        print("This image is AI generated")
+    else:
+        print("This image is human created")
 
 
 async def async_example():
@@ -42,15 +44,15 @@ async def async_example():
         print("Token is invalid")
         exit(1)
 
-    # Classify an image by url
-    resp = await async_client.image_report_by_url("https://thispersondoesnotexist.com")
-    pprint(resp)
-
-    # Classify audio by url
-    resp = await async_client.audio_report_by_url(
-        "https://www.youtube.com/watch?v=v4WiI4es_UI"
-    )
-    pprint(resp)
+    # Classify an image by file
+    resp = await async_client.image_report_by_file_sync("example_image.jpg")
+    pprint(resp.model_dump())
+    
+    # Check if it's AI generated
+    if resp.is_ai():
+        print("This image is AI generated")
+    else:
+        print("This image is human created")
 
 
 if __name__ == "__main__":

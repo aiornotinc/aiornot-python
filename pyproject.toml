@@ -29,6 +29,11 @@ dependencies = [
     "click>=8.1.7",
 ]
 
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.0.0; python_version >= '3.10'",
+]
+
 [project.urls]
 Homepage = "https://aiornot.com/"
 Repository = "https://github.com/aiornotinc/aiornot-python"
@@ -37,6 +42,7 @@ Documentation = "https://github.com/aiornotinc/aiornot-python"
 
 [project.scripts]
 aiornot = "aiornot.cli:cli"
+aiornot-mcp = "aiornot.mcp_server:main"
 
 [build-system]
 requires = ["hatchling"]

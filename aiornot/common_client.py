@@ -1,10 +1,11 @@
 import httpx
 from aiornot.resp_types import (
-    AudioResp,
     CheckTokenResp,
     ImageResp,
-    RefreshTokenResp,
-    RevokeTokenResp,
+    MusicResp,
+    TextResp,
+    VideoResp,
+    VoiceResp,
 )
 
 
@@ -18,24 +19,37 @@ def image_report(resp: httpx.Response) -> ImageResp:
     return ImageResp(**resp.json())
 
 
-def audio_report(resp: httpx.Response) -> AudioResp:
-    resp.raise_for_status()
-    return AudioResp(**resp.json())
-
-
 def check_token(resp: httpx.Response) -> CheckTokenResp:
-    if resp.status_code == 401:
+    if resp.status_code in {401, 403}:
         return CheckTokenResp(is_valid=False)
-    else:
-        resp.raise_for_status()
-    return CheckTokenResp(**resp.json())
-
-
-def refresh_token(resp: httpx.Response) -> RefreshTokenResp:
+    if resp.status_code == 404:
+        try:
+            message = resp.json().get("message", "")
+        except ValueError:
+            message = ""
+        if "billing account" in message:
+            return CheckTokenResp(is_valid=True)
+    if 200 <= resp.status_code < 300:
+        return CheckTokenResp(is_valid=True)
     resp.raise_for_status()
-    return RefreshTokenResp(**resp.json())
+    return CheckTokenResp(is_valid=True)
 
 
-def revoke_token(resp: httpx.Response) -> RevokeTokenResp:
+def text_report(resp: httpx.Response) -> TextResp:
     resp.raise_for_status()
-    return RevokeTokenResp(**resp.json())
+    return TextResp(**resp.json())
+
+
+def voice_report(resp: httpx.Response) -> VoiceResp:
+    resp.raise_for_status()
+    return VoiceResp(**resp.json())
+
+
+def music_report(resp: httpx.Response) -> MusicResp:
+    resp.raise_for_status()
+    return MusicResp(**resp.json())
+
+
+def video_report(resp: httpx.Response) -> VideoResp:
+    resp.raise_for_status()
+    return VideoResp(**resp.json())

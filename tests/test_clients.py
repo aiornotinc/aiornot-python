@@ -14,6 +14,7 @@ def test_matching_signatures():
         if callable(getattr(AsyncClient, func)) and not func.startswith("_")
     ]
 
+    # Both sync and async should have the same methods
     assert set(sync_methods) == set(async_methods)
 
     # For each method, check that the signatures match

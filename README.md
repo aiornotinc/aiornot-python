@@ -12,26 +12,21 @@ This is a Python client for the [AIORNOT](https://aiornot.com) API.
 ## Account Registration and API Key Generation
 
 Register for an account at [AIORNOT](https://aiornot.com). After creating an account,
-you can generate an API key via your [dashboard](https://aiornot.com/dashboard/api). If you
-just created your account, the page looks like,
+you can generate an API token via your [dashboard](https://aiornot.com/dashboard/api).
 
-![](./media/no_existing_keys.png)
+Click the `Create New API Token` button. A dialog opens where you can configure the token:
 
-Click the `Request API Key` button to generate a new API key. After generating a key, the page
-looks like,
+![](./media/create_token.png)
 
-![](./media/copy.png)
+- **Token Name (Optional)** — a label to help you identify the token later (e.g. `cli-token`).
+- **Set custom expiration date** — check this to choose your own expiration date. Tokens
+  expire in 5 years by default; if you set a custom date, it must be in the future.
 
-Press the `Copy API Key` button to copy the key to your clipboard. If you already have
-generated an API key, the page looks like,
-
-![](./media/refresh.png)
-
-Press the `Refresh API Key` button to generate a new API key. Then press the `Copy API Key` button
-to copy the key to your clipboard.
+Click `Create Token` to generate the token, then copy it to your clipboard.
 
 > [!WARNING]  
-> Never share your API key with anyone. It is like a password.
+> Never share your API token with anyone. It is like a password. Copy it as soon as it is
+> created, since you will not be able to view it again afterwards.
 
 ## Installing the Python Package
 
@@ -73,32 +68,33 @@ from aiornot import Client
 # Create a client (reads AIORNOT_API_KEY env)
 client = Client()
 
-# Classify an image by url
-resp = client.image_report_by_url('https://thispersondoesnotexist.com')
-
 # Classify an image by path
-resp = client.image_report_by_file('path/to/image.jpg')
+resp = client.image_report_by_file_sync('path/to/image.jpg')
 
-# Classify audio by url
-resp = client.audio_report_by_url('https://www.youtube.com/watch?v=v4WiI4es_UI')
+# Classify voice or music audio by path
+voice_resp = client.voice_report_by_file_sync('path/to/voice.mp3')
+music_resp = client.music_report_by_file_sync('path/to/music.mp3')
 
-# Classify audio by path
-resp = client.audio_report_by_file('path/to/audio.mp3')
+# Check if it's AI generated
+if resp.is_ai():
+    print("This image is AI generated")
+else:
+    print("This image is human created")
+
+# Get detailed report info
+print(f"Verdict: {resp.report.ai_generated.verdict}")
+print(f"AI confidence: {resp.report.ai_generated.ai.confidence}")
+print(f"Human confidence: {resp.report.ai_generated.human.confidence}")
 
 # Check your token
 resp = client.check_token()
 
-# Refresh your token
-resp = client.refresh_token()
-
-# Revoke your token
-resp = client.revoke_token()
-
 # Check if the API is up
-resp = client.is_live()
+if client.is_live():
+    print('API is up!')
 ```
 
-There is also an async client that has the same methods as the sync client, but as coroutines.
+There is also an async client that has the same methods as the sync client:
 
 ```python
 import asyncio
@@ -107,16 +103,86 @@ from aiornot import AsyncClient
 
 async def main():
     client = AsyncClient()
-    if await client.check_api():
+    if await client.is_live():
         print('API is up!')
     else:
         print('API is down :(')
+    
+    # Classify an image
+    resp = await client.image_report_by_file_sync('path/to/image.jpg')
+    print(f"AI generated: {resp.is_ai()}")
 
 
 if __name__ == '__main__':
     asyncio.run(main())
 ```
 
+## Optional Parameters
+
+The image classification methods support optional parameters:
+
+```python
+# Sync client
+resp = client.image_report_by_file_sync(
+    'path/to/image.jpg',
+    external_id='my-tracking-id',  # Optional tracking ID
+    only=['ai_generated', 'deepfake'],  # Only include specific analysis types
+    excluding=['nsfw']  # Exclude specific analysis types
+)
+
+# Async client
+resp = await async_client.image_report_by_file_sync(
+    'path/to/image.jpg',
+    external_id='my-tracking-id',
+    only=['ai_generated'],
+    excluding=['nsfw', 'quality']
+)
+```
+
+## Response Structure
+
+The API returns comprehensive reports with forward compatibility (new fields can be added):
+
+```python
+# Main response
+resp.id  # Unique report ID
+resp.created_at  # Timestamp
+resp.external_id  # Your tracking ID (if provided)
+
+# AI Generation Detection
+resp.report.ai_generated.verdict  # 'ai', 'human', or 'unknown'
+resp.report.ai_generated.ai.is_detected  # Boolean
+resp.report.ai_generated.ai.confidence  # Float 0-1
+resp.report.ai_generated.human.is_detected  # Boolean
+resp.report.ai_generated.human.confidence  # Float 0-1
+
+# Generator probabilities (if AI detected)
+resp.report.ai_generated.generator.midjourney  # Float or None
+resp.report.ai_generated.generator.dall_e  # Float or None
+# ... and other generators
+
+# Other analysis (if requested)
+resp.report.deepfake  # Deepfake detection
+resp.report.nsfw  # NSFW content detection
+resp.report.quality  # Image quality assessment
+
+# Image metadata
+resp.report.meta.width  # Image width
+resp.report.meta.height  # Image height
+resp.report.meta.format  # File format
+resp.report.meta.size_bytes  # File size
+resp.report.meta.md5  # MD5 hash
+
+# Text metadata is top-level
+text_resp.metadata.word_count
+text_resp.metadata.character_count
+text_resp.metadata.token_count
+
+# Video metadata
+video_resp.report.meta.duration
+video_resp.report.meta.total_bytes
+video_resp.report.deepfake_video  # Deepfake video detection, if requested
+```
 
 ## CLI Usage
 
@@ -133,8 +199,8 @@ uv tool install aiornot
 uv tool upgrade aiornot
 ```
 
-The CLI also looks for the `AIORNOT_API_KEY` environment variable. But it will also
-look for a `~/.aiornot/config.json` file if the environment variable is not set. To
+The CLI looks for `AIORNOT_API_KEY` or `AIORNOT_API_TOKEN`. It will also look
+for a `~/.aiornot/config.json` file if neither environment variable is set. To
 set it up, run the following command,
 
 ```bash
@@ -147,12 +213,87 @@ and follow the prompts. Afterwards, you can see a menu of commands with,
 uvx aiornot
 ```
 
-the two most useful ones being,
+Common commands:
 
 ```bash
-# Classify an image by url or path
-uvx aiornot image [url|path]
+# Classify an image by path
+uvx aiornot image single path/to/image.jpg
 
-# Classify audio by url or path
-uvx aiornot audio [text]
+# With optional parameters
+uvx aiornot image single path/to/image.jpg --external-id my-id --only ai_generated --only deepfake
+
+# Classify text from a file or stdin
+uvx aiornot text single path/to/text.txt
+cat path/to/text.txt | uvx aiornot text single -
+
+# Classify a video by path
+uvx aiornot video single path/to/video.mp4
+uvx aiornot video single path/to/video.mp4 --only ai_video --only deepfake_video
+
+# Classify voice or music audio by path
+uvx aiornot voice single path/to/voice.mp3
+uvx aiornot music single path/to/music.mp3
+
+# Batch from CSV files. The CSV should include a path column by default.
+uvx aiornot image batch-csv images.csv --output image-results.jsonl
+uvx aiornot text batch-csv texts.csv --output text-results.jsonl
+
+# Batch by scanning folders. Resume is enabled by default and skips successful
+# input IDs already present in the JSONL output file.
+uvx aiornot video batch-scan ./videos --output video-results.jsonl
+uvx aiornot voice batch-scan ./voice --output voice-results.jsonl
+uvx aiornot music batch-scan ./music --output music-results.jsonl
 ```
+
+Each media command has `single`, `batch-csv`, and `batch-scan` subcommands. Batch
+commands append JSONL records with an `input` object for correlation, an `ok` flag,
+and either a `response` object or an `error` object. CSV batches use `path`, `source`,
+or `file` columns for files; text CSV batches can also use a `text` column for literal
+text. Optional CSV columns include `id`, `external_id`, `only`, `excluding`, and
+`include_annotations` where they apply.
+
+The client retries transient request failures by default, including HTTP 408, 409,
+425, 429, 500, 502, 503, and 504 responses.
+
+## MCP Server
+
+AIORNOT can also run as a local stdio MCP server for clients that support the
+Model Context Protocol. The MCP server requires Python 3.10 or newer, exposes
+the same analysis operations as the CLI, and reads the API key from
+`AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or `~/.aiornot/config.json`.
+
+Install the optional MCP dependencies when running the server:
+
+```bash
+uvx --from "aiornot[mcp]" aiornot-mcp
+```
+
+Example local MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "aiornot": {
+      "command": "uvx",
+      "args": ["--from", "aiornot[mcp]", "aiornot-mcp"],
+      "env": {
+        "AIORNOT_API_KEY": "your_api_key"
+      }
+    }
+  }
+}
+```
+
+The server provides these tools:
+
+- `aiornot_check_token`
+- `aiornot_analyze_image_file`
+- `aiornot_analyze_text`
+- `aiornot_analyze_text_file`
+- `aiornot_analyze_video_file`
+- `aiornot_analyze_voice_file`
+- `aiornot_analyze_music_file`
+- `aiornot_batch_csv`
+- `aiornot_batch_scan`
+
+The batch tools write the same JSONL records as the CLI.
