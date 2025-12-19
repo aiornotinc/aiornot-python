@@ -5,154 +5,306 @@
 [![PyPI version](https://badge.fury.io/py/aiornot.svg)](https://badge.fury.io/py/aiornot)
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v2/monitor/y3x3.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
-This is a Python client for the [AIORNOT](https://aiornot.com) API.
+Python client for the [AIORNOT](https://aiornot.com) API - detect AI-generated content in images, videos, audio, and text.
 
-# Getting Started
+## Features
 
-## Account Registration and API Key Generation
+- **Image Analysis**: Detect AI-generated images, deepfakes, NSFW content, and more
+- **Video Analysis**: Analyze videos for AI-generated content, synthetic voices, and deepfakes
+- **Voice Analysis**: Detect AI-generated speech
+- **Music Analysis**: Detect AI-generated music
+- **Text Analysis**: Detect AI-generated text with block-level annotations
+- **Batch Processing**: Process multiple files concurrently with progress tracking
+- **Sync & Async**: Both synchronous and asynchronous clients available
 
-Register for an account at [AIORNOT](https://aiornot.com). After creating an account,
-you can generate an API key via your [dashboard](https://aiornot.com/dashboard/api). If you
-just created your account, the page looks like,
+## Installation
 
-![](./media/no_existing_keys.png)
+```bash
+# As a library dependency
+uv add aiornot    # or: pip install aiornot
 
-Click the `Request API Key` button to generate a new API key. After generating a key, the page
-looks like,
+# As a CLI tool (no install needed)
+uvx aiornot --help
+```
 
-![](./media/copy.png)
+Requires Python 3.10+.
 
-Press the `Copy API Key` button to copy the key to your clipboard. If you already have
-generated an API key, the page looks like,
+## Quick Start
 
-![](./media/refresh.png)
+### API Key Setup
 
-Press the `Refresh API Key` button to generate a new API key. Then press the `Copy API Key` button
-to copy the key to your clipboard.
+Register for an account at [AIORNOT](https://aiornot.com) and get your API key from your [dashboard](https://aiornot.com/dashboard/api).
 
-> [!WARNING]  
+![](./media/api-token-mgmt.png)
+
+Click `Create New Token` to open the dialog:
+
+![](./media/create-token.png)
+
+Copy your token after creating it.
+
+> [!WARNING]
 > Never share your API key with anyone. It is like a password.
 
-## Installing the Python Package
-
-To install the python package, run the following command,
+Set it as an environment variable (recommended):
 
 ```bash
-# If using uv (recommended)
-uv add aiornot
-
-# If using pip
-pip install aiornot
+export AIORNOT_API_KEY=your_api_key
 ```
 
-Using the client requires an API key. You can set the API key in two ways. 
-
-The easier and more flexible way is to set an environment variable,
-
-```bash
-AIORNOT_API_KEY=your_api_key
-```
-
-Otherwise, you can pass the api key in as an argument to the client,
-
-```python
-from aiornot import Client, AsyncClient
-
-
-client = Client(api_key='your_api_key')               # sync client
-async_client = AsyncClient(api_key='your_api_key')    # async client
-```
-
-Failure to set either the environment variable or the api key argument will result in a runtime error.
-
-## View from 10,000 feet
+Or pass it directly to the client:
 
 ```python
 from aiornot import Client
 
-# Create a client (reads AIORNOT_API_KEY env)
-client = Client()
-
-# Classify an image by url
-resp = client.image_report_by_url('https://thispersondoesnotexist.com')
-
-# Classify an image by path
-resp = client.image_report_by_file('path/to/image.jpg')
-
-# Classify audio by url
-resp = client.audio_report_by_url('https://www.youtube.com/watch?v=v4WiI4es_UI')
-
-# Classify audio by path
-resp = client.audio_report_by_file('path/to/audio.mp3')
-
-# Check your token
-resp = client.check_token()
-
-# Refresh your token
-resp = client.refresh_token()
-
-# Revoke your token
-resp = client.revoke_token()
-
-# Check if the API is up
-resp = client.is_live()
+client = Client(api_key="your_api_key")
 ```
 
-There is also an async client that has the same methods as the sync client, but as coroutines.
+### Basic Usage
+
+```python
+from aiornot import Client
+
+client = Client()
+
+# Analyze an image
+resp = client.image_report_from_file("path/to/image.jpg")
+print(f"Verdict: {resp.verdict}")      # "ai" or "human"
+print(f"Confidence: {resp.confidence}") # 0.0 to 1.0
+print(f"Is AI: {resp.is_ai()}")         # True or False
+
+# Analyze text
+resp = client.text_report("Some text to analyze for AI generation.")
+print(f"Is AI: {resp.is_ai()}")
+
+# Analyze voice audio
+resp = client.voice_report_from_file("path/to/speech.mp3")
+print(f"Verdict: {resp.verdict}")
+
+# Analyze music
+resp = client.music_report_from_file("path/to/song.mp3")
+print(f"Verdict: {resp.verdict}")
+
+# Analyze video
+resp = client.video_report_from_file("path/to/video.mp4")
+print(f"AI Video: {resp.ai_video_detected}")
+print(f"AI Voice: {resp.ai_voice_detected}")
+```
+
+### Async Client
 
 ```python
 import asyncio
 from aiornot import AsyncClient
 
-
 async def main():
     client = AsyncClient()
-    if await client.check_api():
-        print('API is up!')
-    else:
-        print('API is down :(')
 
+    # All methods are async
+    resp = await client.image_report_from_file("image.jpg")
+    print(f"Verdict: {resp.verdict}")
 
-if __name__ == '__main__':
-    asyncio.run(main())
+asyncio.run(main())
 ```
 
+## Analysis Types
+
+### Image Analysis
+
+Control which analyses to run using `only` or `excluding`:
+
+```python
+from aiornot import Client, ImageAnalysisType
+
+client = Client()
+
+# Only run AI detection and deepfake analysis
+resp = client.image_report_from_file(
+    "image.jpg",
+    only=[ImageAnalysisType.AI_GENERATED, ImageAnalysisType.DEEPFAKE]
+)
+
+# Run all except NSFW detection
+resp = client.image_report_from_file(
+    "image.jpg",
+    excluding=[ImageAnalysisType.NSFW]
+)
+
+# Access results
+print(f"AI Generated: {resp.is_ai()}")
+print(f"Deepfake: {resp.is_deepfake()}")
+print(f"NSFW: {resp.is_nsfw()}")
+
+# Generator detection (if AI detected)
+if resp.report.ai_generated and resp.report.ai_generated.generator:
+    gen = resp.report.ai_generated.generator
+    print(f"Midjourney confidence: {gen.midjourney.confidence}")
+```
+
+Available `ImageAnalysisType` values:
+- `AI_GENERATED` - AI image detection
+- `DEEPFAKE` - Face manipulation detection
+- `NSFW` - Adult content detection
+- `QUALITY` - Image quality assessment
+- `REVERSE_SEARCH` - Reverse image search
+
+### Video Analysis
+
+```python
+from aiornot import Client, VideoAnalysisType
+
+client = Client()
+
+resp = client.video_report_from_file(
+    "video.mp4",
+    only=[VideoAnalysisType.AI_VIDEO, VideoAnalysisType.DEEPFAKE_VIDEO]
+)
+
+print(f"AI Video: {resp.ai_video_detected} ({resp.ai_video_confidence:.1%})")
+print(f"AI Voice: {resp.ai_voice_detected}")
+print(f"AI Music: {resp.ai_music_detected}")
+print(f"Deepfake: {resp.deepfake_detected}")
+```
+
+Available `VideoAnalysisType` values:
+- `AI_VIDEO` - AI-generated video detection
+- `AI_VOICE` - Synthetic voice detection
+- `AI_MUSIC` - AI-generated music detection
+- `DEEPFAKE_VIDEO` - Deepfake detection
+
+### Text Analysis
+
+```python
+client = Client()
+
+# Basic text analysis
+resp = client.text_report("Text to analyze...")
+print(f"Is AI: {resp.is_ai()}")
+print(f"Confidence: {resp.confidence}")
+
+# With block-level annotations
+resp = client.text_report(
+    "First paragraph here. Second paragraph here.",
+    include_annotations=True
+)
+for block, confidence in resp.annotations:
+    print(f"[{confidence:.1%}] {block[:50]}...")
+```
+
+## Batch Processing
+
+Process multiple files concurrently:
+
+```python
+from pathlib import Path
+from aiornot import Client
+
+client = Client()
+
+# Process multiple images
+images = list(Path("images").glob("*.jpg"))
+results = client.image_report_batch(
+    images,
+    max_concurrency=5,
+    on_progress=lambda done, total: print(f"{done}/{total}")
+)
+
+print(f"Total: {results.total}")
+print(f"Succeeded: {results.succeeded}")
+print(f"Failed: {results.failed}")
+print(f"Success rate: {results.success_rate:.1%}")
+
+# Access individual results
+for result in results.results:
+    if result.success:
+        print(f"{result.input}: {result.result.verdict}")
+    else:
+        print(f"{result.input}: Error - {result.error}")
+
+# Process a directory
+results = client.image_report_directory(
+    "path/to/images",
+    recursive=True,
+    max_concurrency=5
+)
+
+# Process from CSV
+results = client.image_report_from_csv(
+    "files.csv",
+    key="file_path",
+    base_directory="/data/images"
+)
+```
 
 ## CLI Usage
 
-AIOrNot also comes with a CLI. You can use it easily via [uv](https://docs.astral.sh/uv/),
-
 ```bash
-# For fresh install
-uvx aiornot
-
-# Or install globally
+# Install
 uv tool install aiornot
 
-# For upgrade
-uv tool upgrade aiornot
+# Configure API key
+aiornot token config
+
+# Analyze files
+aiornot image photo.jpg
+aiornot video clip.mp4
+aiornot voice speech.mp3
+aiornot music song.wav
+aiornot text "Some text to analyze"
+aiornot text --file document.txt
 ```
 
-The CLI also looks for the `AIORNOT_API_KEY` environment variable. But it will also
-look for a `~/.aiornot/config.json` file if the environment variable is not set. To
-set it up, run the following command,
+### Output Formats
 
 ```bash
-uvx aiornot token config
+# JSON output (default)
+aiornot image photo.jpg --format json
+
+# Human-readable table
+aiornot image photo.jpg --format table
+
+# Minimal (verdict + confidence)
+aiornot image photo.jpg --format minimal
+
+# Just the verdict
+aiornot image photo.jpg --quiet
 ```
 
-and follow the prompts. Afterwards, you can see a menu of commands with,
+### Analysis Filtering
 
 ```bash
-uvx aiornot
+# Only run specific analyses
+aiornot image photo.jpg --only ai_generated --only deepfake
+
+# Exclude analyses
+aiornot image photo.jpg --excluding nsfw --excluding quality
 ```
 
-the two most useful ones being,
+## Error Handling
 
-```bash
-# Classify an image by url or path
-uvx aiornot image [url|path]
+```python
+from aiornot import Client
+from aiornot.exceptions import (
+    AIORNotAuthenticationError,
+    AIORNotValidationError,
+    AIORNotRateLimitError,
+    AIORNotTimeoutError,
+)
 
-# Classify audio by url or path
-uvx aiornot audio [text]
+client = Client()
+
+try:
+    resp = client.image_report_from_file("image.jpg")
+except AIORNotAuthenticationError:
+    print("Invalid API key")
+except AIORNotValidationError as e:
+    print(f"Invalid input: {e}")
+except AIORNotRateLimitError:
+    print("Rate limit exceeded")
+except AIORNotTimeoutError:
+    print("Request timed out")
 ```
+
+## License
+
+MIT
