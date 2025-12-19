@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "aiornot", email = "support@aiornot.com" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 license = { text = "MIT" }
 keywords = ["ai detection", "aiornot", "generative ai", "genai"]
 classifiers = [
