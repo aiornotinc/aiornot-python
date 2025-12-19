@@ -280,6 +280,41 @@ aiornot image photo.jpg --only ai_generated --only deepfake
 aiornot image photo.jpg --excluding nsfw --excluding quality
 ```
 
+### Batch Processing
+
+Process multiple files with JSONL output:
+
+```bash
+# Process multiple files
+aiornot batch image photo1.jpg photo2.png photo3.webp
+
+# Process a directory
+aiornot batch image --dir ./photos
+aiornot batch image --dir ./photos --recursive
+
+# Process from CSV file
+aiornot batch image --csv files.csv --key image_path
+aiornot batch image --csv files.csv --key filename --base-dir /data/images
+
+# Output options
+aiornot batch image --dir ./photos --output results.jsonl  # Write to file
+aiornot batch image --dir ./photos --format summary        # Summary only
+aiornot batch image --dir ./photos --format quiet          # Exit code only
+
+# Control concurrency and progress
+aiornot batch image --dir ./photos --concurrency 10 --progress
+aiornot batch image --dir ./photos --fail-fast  # Stop on first error
+```
+
+Available batch commands: `image`, `video`, `voice`, `music`, `text`
+
+JSONL output format (one JSON object per line):
+```jsonl
+{"status":"success","input":"photo1.jpg","result":{...}}
+{"status":"error","input":"photo2.jpg","error":"FileNotFound","message":"..."}
+{"status":"summary","total":2,"succeeded":1,"failed":1,"success_rate":0.5}
+```
+
 ## Error Handling
 
 ```python
