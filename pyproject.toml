@@ -1,20 +1,19 @@
 [project]
 name = "aiornot"
-version = "0.0.5"
-description = "Python client for the AIORNOT API."
+version = "1.0.0"
+description = "Python client for the AIORNOT API - detect AI-generated content in images, videos, audio, and text."
 readme = "README.md"
 authors = [
     { name = "aiornot", email = "support@aiornot.com" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 keywords = ["ai detection", "aiornot", "generative ai", "genai"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -49,14 +48,14 @@ dev = [
     "coverage>=7.3.2",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 combine-as-imports = true
 relative-imports-order = "closest-to-furthest"
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.ruff.pep8-naming]
+[tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["classmethod", "pydantic.validator", "pydantic.root_validator"]
 
 [[tool.mypy.overrides]]
