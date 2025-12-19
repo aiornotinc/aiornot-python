@@ -1,9 +1,11 @@
 """CLI for AIORNOT API."""
 
+import csv
 import json
 import os
 import sys
 from pathlib import Path
+from typing import IO
 
 import click
 from pydantic import BaseModel
@@ -11,6 +13,7 @@ from pydantic import BaseModel
 from aiornot.exceptions import AIORNotError
 from aiornot.sync_client import Client
 from aiornot.types import (
+    BatchSummary,
     MusicReportResponse,
     TextReportResponse,
     V2ImageReportResponse,
@@ -486,6 +489,563 @@ def text(
 
     except AIORNotError as e:
         click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+# =============================================================================
+# Batch Commands
+# =============================================================================
+
+
+@cli.group()
+def batch():
+    """Process multiple files in batch mode.
+
+    Supports three input modes:
+    - File arguments: aiornot batch image file1.jpg file2.png
+    - Directory: aiornot batch image --dir ./images
+    - CSV file: aiornot batch image --csv files.csv --key file_path
+    """
+    pass
+
+
+def _collect_files_from_csv(
+    csv_path: str,
+    key: str,
+    base_dir: str | None,
+) -> list[Path]:
+    """Collect file paths from a CSV file."""
+    base = Path(base_dir) if base_dir else None
+    files: list[Path] = []
+
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f)
+        if key not in (reader.fieldnames or []):
+            raise click.ClickException(
+                f"CSV column '{key}' not found. Available: {reader.fieldnames}"
+            )
+        for row in reader:
+            file_path = row[key]
+            if base:
+                files.append(base / file_path)
+            else:
+                files.append(Path(file_path))
+
+    return files
+
+
+def _collect_files_from_dir(
+    directory: str,
+    extensions: list[str],
+    recursive: bool,
+) -> list[Path]:
+    """Collect files from a directory by extension."""
+    path = Path(directory)
+    if not path.is_dir():
+        raise click.ClickException(f"Directory not found: {directory}")
+
+    files: list[Path] = []
+    for ext in extensions:
+        if recursive:
+            files.extend(path.rglob(f"*.{ext}"))
+        else:
+            files.extend(path.glob(f"*.{ext}"))
+
+    return sorted(files)
+
+
+def _collect_files(
+    file_args: tuple[str, ...],
+    csv_path: str | None,
+    csv_key: str,
+    base_dir: str | None,
+    directory: str | None,
+    recursive: bool,
+    extensions: list[str],
+) -> list[Path]:
+    """Collect files from various input sources."""
+    sources_used = sum([bool(file_args), bool(csv_path), bool(directory)])
+
+    if sources_used == 0:
+        raise click.ClickException(
+            "No input specified. Provide files, --csv, or --dir"
+        )
+    if sources_used > 1:
+        raise click.ClickException(
+            "Multiple input sources specified. Use only one of: files, --csv, --dir"
+        )
+
+    if csv_path:
+        return _collect_files_from_csv(csv_path, csv_key, base_dir)
+    elif directory:
+        return _collect_files_from_dir(directory, extensions, recursive)
+    else:
+        return [Path(f) for f in file_args]
+
+
+def _make_progress_callback(
+    show_progress: bool,
+) -> tuple[callable, callable] | tuple[None, None]:
+    """Create progress display callbacks."""
+    if not show_progress:
+        return None, None
+
+    state = {"current": 0, "total": 0}
+
+    def on_progress(done: int, total: int) -> None:
+        state["current"] = done
+        state["total"] = total
+        click.echo(f"\rProcessing: {done}/{total}", nl=False, err=True)
+
+    def on_complete() -> None:
+        if state["total"] > 0:
+            click.echo("", err=True)  # New line after progress
+
+    return on_progress, on_complete
+
+
+def _output_batch_jsonl(
+    summary: BatchSummary,
+    output: IO[str] | None,
+) -> None:
+    """Output batch results as JSONL."""
+    out = output or sys.stdout
+    for line in summary.to_jsonl():
+        out.write(line + "\n")
+
+
+def _output_batch_summary(
+    summary: BatchSummary,
+    use_color: bool,
+) -> None:
+    """Output batch summary in human-readable format."""
+    succeeded_text = _colorize(str(summary.succeeded), Colors.GREEN, use_color)
+    failed_text = _colorize(str(summary.failed), Colors.RED, use_color) if summary.failed else str(summary.failed)
+    rate = f"{summary.success_rate * 100:.1f}%"
+
+    click.echo(
+        f"Processed {summary.total} files: "
+        f"{succeeded_text} succeeded, {failed_text} failed ({rate} success rate)"
+    )
+
+
+# Batch options decorators
+def batch_input_options(f):
+    """Add common batch input options to a command."""
+    f = click.argument("files", nargs=-1, type=click.Path())(f)
+    f = click.option("--csv", "csv_path", type=click.Path(exists=True), help="Read file paths from CSV")(f)
+    f = click.option("--key", "csv_key", default="file_path", help="CSV column name for file path")(f)
+    f = click.option("--base-dir", type=click.Path(exists=True), help="Base directory for CSV paths")(f)
+    f = click.option("--dir", "directory", type=click.Path(exists=True), help="Process all files in directory")(f)
+    f = click.option("--recursive", "-r", is_flag=True, help="Include subdirectories (with --dir)")(f)
+    return f
+
+
+def batch_output_options(f):
+    """Add common batch output options to a command."""
+    f = click.option(
+        "--format",
+        "output_format",
+        type=click.Choice(["jsonl", "summary", "quiet"]),
+        default="jsonl",
+        help="Output format",
+    )(f)
+    f = click.option("--output", "-o", type=click.Path(), help="Write output to file")(f)
+    f = click.option("--progress/--no-progress", default=None, help="Show progress (default: auto)")(f)
+    f = click.option("--concurrency", "-c", type=int, help="Max concurrent requests")(f)
+    f = click.option("--fail-fast", is_flag=True, help="Stop on first error")(f)
+    return f
+
+
+IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "heic", "heif", "tiff", "gif", "bmp"]
+VIDEO_EXTENSIONS = ["mp4", "mov", "avi", "mkv", "webm", "m4v"]
+AUDIO_EXTENSIONS = ["mp3", "wav", "flac", "m4a", "ogg", "aac", "wma"]
+
+
+@batch.command("image")
+@batch_input_options
+@batch_output_options
+@click.option(
+    "--only",
+    "only_types",
+    multiple=True,
+    type=click.Choice(["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]),
+    help="Only run these analysis types",
+)
+@click.option(
+    "--excluding",
+    "excluding_types",
+    multiple=True,
+    type=click.Choice(["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]),
+    help="Exclude these analysis types",
+)
+def batch_image(
+    files: tuple[str, ...],
+    csv_path: str | None,
+    csv_key: str,
+    base_dir: str | None,
+    directory: str | None,
+    recursive: bool,
+    output_format: str,
+    output: str | None,
+    progress: bool | None,
+    concurrency: int | None,
+    fail_fast: bool,
+    only_types: tuple[str, ...],
+    excluding_types: tuple[str, ...],
+):
+    """Batch process images for AI-generated content detection."""
+    try:
+        file_list = _collect_files(
+            files, csv_path, csv_key, base_dir, directory, recursive, IMAGE_EXTENSIONS
+        )
+    except click.ClickException:
+        raise
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+    if not file_list:
+        raise click.ClickException("No files found to process")
+
+    client = Client(api_key=_load_api_key())
+
+    only = [ImageAnalysisType(t) for t in only_types] if only_types else None
+    excluding = [ImageAnalysisType(t) for t in excluding_types] if excluding_types else None
+
+    show_progress = progress if progress is not None else sys.stderr.isatty()
+    on_progress, on_complete = _make_progress_callback(show_progress)
+
+    batch_kwargs = {
+        "only": only,
+        "excluding": excluding,
+        "fail_fast": fail_fast,
+        "on_progress": on_progress,
+    }
+    if concurrency is not None:
+        batch_kwargs["max_concurrency"] = concurrency
+
+    try:
+        summary = client.image_report_batch(file_list, **batch_kwargs)
+    except AIORNotError as e:
+        raise click.ClickException(str(e))
+    finally:
+        if on_complete:
+            on_complete()
+
+    output_file = open(output, "w") if output else None
+    try:
+        if output_format == "jsonl":
+            _output_batch_jsonl(summary, output_file)
+        elif output_format == "summary":
+            _output_batch_summary(summary, sys.stdout.isatty())
+        # quiet mode: no output, just exit code
+    finally:
+        if output_file:
+            output_file.close()
+
+    if summary.failed > 0:
+        sys.exit(1)
+
+
+@batch.command("video")
+@batch_input_options
+@batch_output_options
+@click.option(
+    "--only",
+    "only_types",
+    multiple=True,
+    type=click.Choice(["ai_video", "ai_music", "ai_voice", "deepfake_video"]),
+    help="Only run these analysis types",
+)
+@click.option(
+    "--excluding",
+    "excluding_types",
+    multiple=True,
+    type=click.Choice(["ai_video", "ai_music", "ai_voice", "deepfake_video"]),
+    help="Exclude these analysis types",
+)
+def batch_video(
+    files: tuple[str, ...],
+    csv_path: str | None,
+    csv_key: str,
+    base_dir: str | None,
+    directory: str | None,
+    recursive: bool,
+    output_format: str,
+    output: str | None,
+    progress: bool | None,
+    concurrency: int | None,
+    fail_fast: bool,
+    only_types: tuple[str, ...],
+    excluding_types: tuple[str, ...],
+):
+    """Batch process videos for AI-generated content detection."""
+    try:
+        file_list = _collect_files(
+            files, csv_path, csv_key, base_dir, directory, recursive, VIDEO_EXTENSIONS
+        )
+    except click.ClickException:
+        raise
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+    if not file_list:
+        raise click.ClickException("No files found to process")
+
+    client = Client(api_key=_load_api_key())
+
+    only = [VideoAnalysisType(t) for t in only_types] if only_types else None
+    excluding = [VideoAnalysisType(t) for t in excluding_types] if excluding_types else None
+
+    show_progress = progress if progress is not None else sys.stderr.isatty()
+    on_progress, on_complete = _make_progress_callback(show_progress)
+
+    batch_kwargs = {
+        "only": only,
+        "excluding": excluding,
+        "fail_fast": fail_fast,
+        "on_progress": on_progress,
+    }
+    if concurrency is not None:
+        batch_kwargs["max_concurrency"] = concurrency
+
+    try:
+        summary = client.video_report_batch(file_list, **batch_kwargs)
+    except AIORNotError as e:
+        raise click.ClickException(str(e))
+    finally:
+        if on_complete:
+            on_complete()
+
+    output_file = open(output, "w") if output else None
+    try:
+        if output_format == "jsonl":
+            _output_batch_jsonl(summary, output_file)
+        elif output_format == "summary":
+            _output_batch_summary(summary, sys.stdout.isatty())
+    finally:
+        if output_file:
+            output_file.close()
+
+    if summary.failed > 0:
+        sys.exit(1)
+
+
+@batch.command("voice")
+@batch_input_options
+@batch_output_options
+def batch_voice(
+    files: tuple[str, ...],
+    csv_path: str | None,
+    csv_key: str,
+    base_dir: str | None,
+    directory: str | None,
+    recursive: bool,
+    output_format: str,
+    output: str | None,
+    progress: bool | None,
+    concurrency: int | None,
+    fail_fast: bool,
+):
+    """Batch process voice/speech audio files for AI detection."""
+    try:
+        file_list = _collect_files(
+            files, csv_path, csv_key, base_dir, directory, recursive, AUDIO_EXTENSIONS
+        )
+    except click.ClickException:
+        raise
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+    if not file_list:
+        raise click.ClickException("No files found to process")
+
+    client = Client(api_key=_load_api_key())
+
+    show_progress = progress if progress is not None else sys.stderr.isatty()
+    on_progress, on_complete = _make_progress_callback(show_progress)
+
+    batch_kwargs = {
+        "fail_fast": fail_fast,
+        "on_progress": on_progress,
+    }
+    if concurrency is not None:
+        batch_kwargs["max_concurrency"] = concurrency
+
+    try:
+        summary = client.voice_report_batch(file_list, **batch_kwargs)
+    except AIORNotError as e:
+        raise click.ClickException(str(e))
+    finally:
+        if on_complete:
+            on_complete()
+
+    output_file = open(output, "w") if output else None
+    try:
+        if output_format == "jsonl":
+            _output_batch_jsonl(summary, output_file)
+        elif output_format == "summary":
+            _output_batch_summary(summary, sys.stdout.isatty())
+    finally:
+        if output_file:
+            output_file.close()
+
+    if summary.failed > 0:
+        sys.exit(1)
+
+
+@batch.command("music")
+@batch_input_options
+@batch_output_options
+def batch_music(
+    files: tuple[str, ...],
+    csv_path: str | None,
+    csv_key: str,
+    base_dir: str | None,
+    directory: str | None,
+    recursive: bool,
+    output_format: str,
+    output: str | None,
+    progress: bool | None,
+    concurrency: int | None,
+    fail_fast: bool,
+):
+    """Batch process music audio files for AI detection."""
+    try:
+        file_list = _collect_files(
+            files, csv_path, csv_key, base_dir, directory, recursive, AUDIO_EXTENSIONS
+        )
+    except click.ClickException:
+        raise
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+    if not file_list:
+        raise click.ClickException("No files found to process")
+
+    client = Client(api_key=_load_api_key())
+
+    show_progress = progress if progress is not None else sys.stderr.isatty()
+    on_progress, on_complete = _make_progress_callback(show_progress)
+
+    batch_kwargs = {
+        "fail_fast": fail_fast,
+        "on_progress": on_progress,
+    }
+    if concurrency is not None:
+        batch_kwargs["max_concurrency"] = concurrency
+
+    try:
+        summary = client.music_report_batch(file_list, **batch_kwargs)
+    except AIORNotError as e:
+        raise click.ClickException(str(e))
+    finally:
+        if on_complete:
+            on_complete()
+
+    output_file = open(output, "w") if output else None
+    try:
+        if output_format == "jsonl":
+            _output_batch_jsonl(summary, output_file)
+        elif output_format == "summary":
+            _output_batch_summary(summary, sys.stdout.isatty())
+    finally:
+        if output_file:
+            output_file.close()
+
+    if summary.failed > 0:
+        sys.exit(1)
+
+
+@batch.command("text")
+@click.argument("files", nargs=-1, type=click.Path(exists=True))
+@click.option("--csv", "csv_path", type=click.Path(exists=True), help="Read file paths from CSV")
+@click.option("--key", "csv_key", default="file_path", help="CSV column name for file path")
+@click.option("--base-dir", type=click.Path(exists=True), help="Base directory for CSV paths")
+@batch_output_options
+@click.option("--annotations", "-a", is_flag=True, help="Include block-level annotations")
+def batch_text(
+    files: tuple[str, ...],
+    csv_path: str | None,
+    csv_key: str,
+    base_dir: str | None,
+    output_format: str,
+    output: str | None,
+    progress: bool | None,
+    concurrency: int | None,
+    fail_fast: bool,
+    annotations: bool,
+):
+    """Batch process text files for AI detection.
+
+    Unlike other batch commands, this reads text content from files.
+    """
+    # Collect file paths
+    sources_used = sum([bool(files), bool(csv_path)])
+    if sources_used == 0:
+        raise click.ClickException("No input specified. Provide files or --csv")
+    if sources_used > 1:
+        raise click.ClickException("Multiple input sources specified. Use only one of: files, --csv")
+
+    if csv_path:
+        file_list = _collect_files_from_csv(csv_path, csv_key, base_dir)
+    else:
+        file_list = [Path(f) for f in files]
+
+    if not file_list:
+        raise click.ClickException("No files found to process")
+
+    # Read text content from files
+    texts: list[str] = []
+    file_map: list[Path] = []  # Keep track of which file each text came from
+    for file_path in file_list:
+        try:
+            with open(file_path) as f:
+                texts.append(f.read())
+                file_map.append(file_path)
+        except Exception as e:
+            click.echo(f"Warning: Could not read {file_path}: {e}", err=True)
+
+    if not texts:
+        raise click.ClickException("No text content could be read from files")
+
+    client = Client(api_key=_load_api_key())
+
+    show_progress = progress if progress is not None else sys.stderr.isatty()
+    on_progress, on_complete = _make_progress_callback(show_progress)
+
+    batch_kwargs = {
+        "include_annotations": annotations,
+        "fail_fast": fail_fast,
+        "on_progress": on_progress,
+    }
+    if concurrency is not None:
+        batch_kwargs["max_concurrency"] = concurrency
+
+    try:
+        summary = client.text_report_batch(texts, **batch_kwargs)
+    except AIORNotError as e:
+        raise click.ClickException(str(e))
+    finally:
+        if on_complete:
+            on_complete()
+
+    # Update input field to show file path instead of text content
+    for i, result in enumerate(summary.results):
+        if i < len(file_map):
+            result.input = str(file_map[i])
+
+    output_file = open(output, "w") if output else None
+    try:
+        if output_format == "jsonl":
+            _output_batch_jsonl(summary, output_file)
+        elif output_format == "summary":
+            _output_batch_summary(summary, sys.stdout.isatty())
+    finally:
+        if output_file:
+            output_file.close()
+
+    if summary.failed > 0:
         sys.exit(1)
 
 
