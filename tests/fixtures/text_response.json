@@ -1,0 +1,22 @@
+{
+  "id": "e5f6a7b8-c9d0-1234-ef01-345678901234",
+  "created_at": "2024-01-15T10:50:00.000000Z",
+  "external_id": "text-test-id",
+  "report": {
+    "ai_text": {
+      "is_detected": true,
+      "confidence": 0.85,
+      "annotations": [
+        ["This is a sample paragraph that appears to be AI-generated.", 0.92],
+        ["Another paragraph with mixed content.", 0.65],
+        ["A clearly human-written section.", 0.15]
+      ]
+    }
+  },
+  "metadata": {
+    "word_count": 150,
+    "character_count": 850,
+    "token_count": 200,
+    "md5": "e5f6a7b8c9d0123456789012345678ab"
+  }
+}

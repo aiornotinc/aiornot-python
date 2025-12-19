@@ -1,8 +1,12 @@
-import os
+"""AIORNOT client settings."""
 
+import os
 
 API_KEY = os.environ.get("AIORNOT_API_KEY")
 API_KEY_ERR = (
-    "API key must be provided or set as an environment variable AIORNOT_API_KEY"
+    "API key required. Set AIORNOT_API_KEY env var or pass api_key to Client()"
 )
-BASE_URL = os.environ.get("AIORNOT_BASE_URL", "https://api.aiornot.com/v1")
+
+# Base URL without version path - endpoints specify their own version
+# Override with AIORNOT_BASE_URL for testing/staging environments
+BASE_URL = os.environ.get("AIORNOT_BASE_URL", "https://api.aiornot.com")
