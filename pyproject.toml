@@ -1,6 +1,6 @@
 [project]
 name = "aiornot"
-version = "1.0.0"
+version = "0.1.0"
 description = "Python client for the AIORNOT API - detect AI-generated content in images, videos, audio, and text."
 readme = "README.md"
 authors = [
@@ -10,7 +10,7 @@ requires-python = ">=3.10,<3.14"
 license = { text = "MIT" }
 keywords = ["ai detection", "aiornot", "generative ai", "genai"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -41,6 +41,9 @@ aiornot = "aiornot.cli:cli"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/aiornot"]
+
 [dependency-groups]
 dev = [
     "pytest>=7.4.3",
@@ -57,11 +60,3 @@ ban-relative-imports = "all"
 
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["classmethod", "pydantic.validator", "pydantic.root_validator"]
-
-[[tool.mypy.overrides]]
-module = [
-    "pydantic.*",
-    "httpx.*",
-    "click.*",
-]
-ignore_missing_imports = true
