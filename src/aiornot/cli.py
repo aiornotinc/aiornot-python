@@ -5,6 +5,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from collections.abc import Callable
 from typing import IO
 
 import click
@@ -587,7 +588,7 @@ def _collect_files(
 
 def _make_progress_callback(
     show_progress: bool,
-) -> tuple[callable, callable] | tuple[None, None]:
+) -> tuple[Callable[[int, int], None], Callable[[], None]] | tuple[None, None]:
     """Create progress display callbacks."""
     if not show_progress:
         return None, None
@@ -747,17 +748,15 @@ def batch_image(
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
 
-    batch_kwargs = {
-        "only": only,
-        "excluding": excluding,
-        "fail_fast": fail_fast,
-        "on_progress": on_progress,
-    }
-    if concurrency is not None:
-        batch_kwargs["max_concurrency"] = concurrency
-
     try:
-        summary = client.image_report_batch(file_list, **batch_kwargs)
+        summary = client.image_report_batch(
+            file_list,
+            only=only,
+            excluding=excluding,
+            fail_fast=fail_fast,
+            on_progress=on_progress,
+            max_concurrency=concurrency if concurrency is not None else 5,
+        )
     except AIORNotError as e:
         raise click.ClickException(str(e))
     finally:
@@ -834,17 +833,15 @@ def batch_video(
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
 
-    batch_kwargs = {
-        "only": only,
-        "excluding": excluding,
-        "fail_fast": fail_fast,
-        "on_progress": on_progress,
-    }
-    if concurrency is not None:
-        batch_kwargs["max_concurrency"] = concurrency
-
     try:
-        summary = client.video_report_batch(file_list, **batch_kwargs)
+        summary = client.video_report_batch(
+            file_list,
+            only=only,
+            excluding=excluding,
+            fail_fast=fail_fast,
+            on_progress=on_progress,
+            max_concurrency=concurrency if concurrency is not None else 2,
+        )
     except AIORNotError as e:
         raise click.ClickException(str(e))
     finally:
@@ -899,15 +896,13 @@ def batch_voice(
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
 
-    batch_kwargs = {
-        "fail_fast": fail_fast,
-        "on_progress": on_progress,
-    }
-    if concurrency is not None:
-        batch_kwargs["max_concurrency"] = concurrency
-
     try:
-        summary = client.voice_report_batch(file_list, **batch_kwargs)
+        summary = client.voice_report_batch(
+            file_list,
+            fail_fast=fail_fast,
+            on_progress=on_progress,
+            max_concurrency=concurrency if concurrency is not None else 3,
+        )
     except AIORNotError as e:
         raise click.ClickException(str(e))
     finally:
@@ -962,15 +957,13 @@ def batch_music(
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
 
-    batch_kwargs = {
-        "fail_fast": fail_fast,
-        "on_progress": on_progress,
-    }
-    if concurrency is not None:
-        batch_kwargs["max_concurrency"] = concurrency
-
     try:
-        summary = client.music_report_batch(file_list, **batch_kwargs)
+        summary = client.music_report_batch(
+            file_list,
+            fail_fast=fail_fast,
+            on_progress=on_progress,
+            max_concurrency=concurrency if concurrency is not None else 3,
+        )
     except AIORNotError as e:
         raise click.ClickException(str(e))
     finally:
@@ -1058,16 +1051,14 @@ def batch_text(
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
 
-    batch_kwargs = {
-        "include_annotations": annotations,
-        "fail_fast": fail_fast,
-        "on_progress": on_progress,
-    }
-    if concurrency is not None:
-        batch_kwargs["max_concurrency"] = concurrency
-
     try:
-        summary = client.text_report_batch(texts, **batch_kwargs)
+        summary = client.text_report_batch(
+            texts,
+            include_annotations=annotations,
+            fail_fast=fail_fast,
+            on_progress=on_progress,
+            max_concurrency=concurrency if concurrency is not None else 10,
+        )
     except AIORNotError as e:
         raise click.ClickException(str(e))
     finally:

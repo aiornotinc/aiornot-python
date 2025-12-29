@@ -52,6 +52,7 @@ class TestV2ImageReportResponse:
         data = load_fixture("image_response.json")
         resp = V2ImageReportResponse(**data)
 
+        assert resp.report.ai_generated is not None
         gen = resp.report.ai_generated.generator
         assert gen is not None
         assert gen.midjourney.is_detected is True
