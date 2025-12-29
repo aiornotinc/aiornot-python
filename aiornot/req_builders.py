@@ -86,13 +86,14 @@ def voice_report_args(
     data: bytes,
     api_key: str,
     base_url: str,
+    filename: str = "audio.mp3",
     timeout: int = _DEFAULT_TIMEOUT,
 ) -> dict[str, Any]:
     """Build args for v1 voice analysis endpoint."""
     return {
         "url": f"{base_url}/v1/reports/voice",
         "headers": {"Authorization": f"Bearer {api_key}"},
-        "files": {"file": data},
+        "files": {"file": (filename, data)},
         "timeout": timeout,
     }
 
@@ -101,13 +102,14 @@ def music_report_args(
     data: bytes,
     api_key: str,
     base_url: str,
+    filename: str = "audio.mp3",
     timeout: int = _DEFAULT_TIMEOUT,
 ) -> dict[str, Any]:
     """Build args for v1 music analysis endpoint."""
     return {
         "url": f"{base_url}/v1/reports/music",
         "headers": {"Authorization": f"Bearer {api_key}"},
-        "files": {"file": data},
+        "files": {"file": (filename, data)},
         "timeout": timeout,
     }
 

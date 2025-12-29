@@ -155,7 +155,9 @@ class AsyncClient:
         )
 
     # Voice methods
-    async def voice_report(self, data: bytes) -> VoiceReportResponse:
+    async def voice_report(
+        self, data: bytes, *, filename: str = "audio.mp3"
+    ) -> VoiceReportResponse:
         """Analyze voice/speech audio from bytes."""
         try:
             resp = await self._client.post(
@@ -163,6 +165,7 @@ class AsyncClient:
                     data=data,
                     api_key=self._api_key,
                     base_url=self._base_url,
+                    filename=filename,
                     timeout=int(self._timeout),
                 )
             )
@@ -179,10 +182,12 @@ class AsyncClient:
             raise AIORNotFileError(f"File not found: {path}")
         async with aiofiles.open(path, "rb") as f:
             data = await f.read()
-        return await self.voice_report(data)
+        return await self.voice_report(data, filename=path.name)
 
     # Music methods
-    async def music_report(self, data: bytes) -> MusicReportResponse:
+    async def music_report(
+        self, data: bytes, *, filename: str = "audio.mp3"
+    ) -> MusicReportResponse:
         """Analyze music audio from bytes."""
         try:
             resp = await self._client.post(
@@ -190,6 +195,7 @@ class AsyncClient:
                     data=data,
                     api_key=self._api_key,
                     base_url=self._base_url,
+                    filename=filename,
                     timeout=int(self._timeout),
                 )
             )
@@ -206,7 +212,7 @@ class AsyncClient:
             raise AIORNotFileError(f"File not found: {path}")
         async with aiofiles.open(path, "rb") as f:
             data = await f.read()
-        return await self.music_report(data)
+        return await self.music_report(data, filename=path.name)
 
     # Text methods
     async def text_report(
