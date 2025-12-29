@@ -490,9 +490,7 @@ class AsyncClient:
         results: list[BatchResult[TextReportResponse]] = []
         completed = 0
 
-        async def process_item(
-            text: str, idx: int
-        ) -> BatchResult[TextReportResponse]:
+        async def process_item(text: str, idx: int) -> BatchResult[TextReportResponse]:
             nonlocal completed
             async with semaphore:
                 external_id = (

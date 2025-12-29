@@ -86,9 +86,9 @@ def _output_image_table(resp: V2ImageReportResponse, use_color: bool) -> None:
     verdict_display = _colorize(verdict.upper(), _verdict_color(verdict), use_color)
     conf_display = _format_confidence(confidence)
 
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(f"  Image Analysis: {resp.id}")
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(f"  Verdict:      {verdict_display}")
     click.echo(f"  Confidence:   {conf_display}")
 
@@ -110,7 +110,7 @@ def _output_image_table(resp: V2ImageReportResponse, use_color: bool) -> None:
                 f"  Generator:    {top_gen[0]} ({_format_confidence(top_gen[1].confidence)})"
             )
 
-    click.echo(f"{'-'*60}")
+    click.echo(f"{'-' * 60}")
 
     if report.deepfake:
         df_status = (
@@ -136,16 +136,16 @@ def _output_image_table(resp: V2ImageReportResponse, use_color: bool) -> None:
         )
         click.echo(f"  Quality:      {quality_status}")
 
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
 
 
 def _output_video_table(resp: VideoReportResponse, use_color: bool) -> None:
     """Output video analysis as table."""
     report = resp.report
 
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(f"  Video Analysis: {resp.id}")
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
 
     # AI Video
     video_verdict = "AI" if report.ai_video.is_detected else "Human"
@@ -182,9 +182,9 @@ def _output_video_table(resp: VideoReportResponse, use_color: bool) -> None:
             f"({_format_confidence(report.deepfake_video.confidence)})"
         )
 
-    click.echo(f"{'-'*60}")
+    click.echo(f"{'-' * 60}")
     click.echo(f"  Duration:     {report.meta.duration}s")
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
 
 
 def _output_audio_table(
@@ -194,16 +194,16 @@ def _output_audio_table(
     report = resp.report
     verdict_color = _verdict_color(report.verdict)
 
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(f"  {label} Analysis: {resp.id}")
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(
         f"  Verdict:      {_colorize(report.verdict.upper(), verdict_color, use_color)}"
     )
     click.echo(f"  Confidence:   {_format_confidence(report.confidence)}")
-    click.echo(f"{'-'*60}")
+    click.echo(f"{'-' * 60}")
     click.echo(f"  Duration:     {report.duration}s")
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
 
 
 def _output_text_table(resp: TextReportResponse, use_color: bool) -> None:
@@ -212,19 +212,19 @@ def _output_text_table(resp: TextReportResponse, use_color: bool) -> None:
     verdict = "ai" if report.is_detected else "human"
     verdict_color = _verdict_color(verdict)
 
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(f"  Text Analysis: {resp.id}")
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
     click.echo(
         f"  Verdict:      {_colorize(verdict.upper(), verdict_color, use_color)}"
     )
     click.echo(f"  Confidence:   {_format_confidence(report.confidence)}")
-    click.echo(f"{'-'*60}")
+    click.echo(f"{'-' * 60}")
     click.echo(f"  Words:        {resp.metadata.word_count}")
     click.echo(f"  Characters:   {resp.metadata.character_count}")
 
     if report.annotations:
-        click.echo(f"{'-'*60}")
+        click.echo(f"{'-' * 60}")
         click.echo("  Annotations:")
         for text_block, conf in report.annotations[:5]:  # Show first 5
             truncated = text_block[:50] + "..." if len(text_block) > 50 else text_block
@@ -232,7 +232,7 @@ def _output_text_table(resp: TextReportResponse, use_color: bool) -> None:
         if len(report.annotations) > 5:
             click.echo(f"    ... and {len(report.annotations) - 5} more")
 
-    click.echo(f"{'='*60}")
+    click.echo(f"{'=' * 60}")
 
 
 @click.group()
@@ -281,14 +281,18 @@ def _get_use_color(color_flag: bool | None) -> bool:
     "--only",
     "only_types",
     multiple=True,
-    type=click.Choice(["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]),
+    type=click.Choice(
+        ["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]
+    ),
     help="Only run these analysis types",
 )
 @click.option(
     "--excluding",
     "excluding_types",
     multiple=True,
-    type=click.Choice(["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]),
+    type=click.Choice(
+        ["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]
+    ),
     help="Exclude these analysis types",
 )
 @click.option("--external-id", help="External tracking ID")
@@ -567,9 +571,7 @@ def _collect_files(
     sources_used = sum([bool(file_args), bool(csv_path), bool(directory)])
 
     if sources_used == 0:
-        raise click.ClickException(
-            "No input specified. Provide files, --csv, or --dir"
-        )
+        raise click.ClickException("No input specified. Provide files, --csv, or --dir")
     if sources_used > 1:
         raise click.ClickException(
             "Multiple input sources specified. Use only one of: files, --csv, --dir"
@@ -620,7 +622,11 @@ def _output_batch_summary(
 ) -> None:
     """Output batch summary in human-readable format."""
     succeeded_text = _colorize(str(summary.succeeded), Colors.GREEN, use_color)
-    failed_text = _colorize(str(summary.failed), Colors.RED, use_color) if summary.failed else str(summary.failed)
+    failed_text = (
+        _colorize(str(summary.failed), Colors.RED, use_color)
+        if summary.failed
+        else str(summary.failed)
+    )
     rate = f"{summary.success_rate * 100:.1f}%"
 
     click.echo(
@@ -633,11 +639,27 @@ def _output_batch_summary(
 def batch_input_options(f):
     """Add common batch input options to a command."""
     f = click.argument("files", nargs=-1, type=click.Path())(f)
-    f = click.option("--csv", "csv_path", type=click.Path(exists=True), help="Read file paths from CSV")(f)
-    f = click.option("--key", "csv_key", default="file_path", help="CSV column name for file path")(f)
-    f = click.option("--base-dir", type=click.Path(exists=True), help="Base directory for CSV paths")(f)
-    f = click.option("--dir", "directory", type=click.Path(exists=True), help="Process all files in directory")(f)
-    f = click.option("--recursive", "-r", is_flag=True, help="Include subdirectories (with --dir)")(f)
+    f = click.option(
+        "--csv",
+        "csv_path",
+        type=click.Path(exists=True),
+        help="Read file paths from CSV",
+    )(f)
+    f = click.option(
+        "--key", "csv_key", default="file_path", help="CSV column name for file path"
+    )(f)
+    f = click.option(
+        "--base-dir", type=click.Path(exists=True), help="Base directory for CSV paths"
+    )(f)
+    f = click.option(
+        "--dir",
+        "directory",
+        type=click.Path(exists=True),
+        help="Process all files in directory",
+    )(f)
+    f = click.option(
+        "--recursive", "-r", is_flag=True, help="Include subdirectories (with --dir)"
+    )(f)
     return f
 
 
@@ -650,8 +672,12 @@ def batch_output_options(f):
         default="jsonl",
         help="Output format",
     )(f)
-    f = click.option("--output", "-o", type=click.Path(), help="Write output to file")(f)
-    f = click.option("--progress/--no-progress", default=None, help="Show progress (default: auto)")(f)
+    f = click.option("--output", "-o", type=click.Path(), help="Write output to file")(
+        f
+    )
+    f = click.option(
+        "--progress/--no-progress", default=None, help="Show progress (default: auto)"
+    )(f)
     f = click.option("--concurrency", "-c", type=int, help="Max concurrent requests")(f)
     f = click.option("--fail-fast", is_flag=True, help="Stop on first error")(f)
     return f
@@ -669,14 +695,18 @@ AUDIO_EXTENSIONS = ["mp3", "wav", "flac", "m4a", "ogg", "aac", "wma"]
     "--only",
     "only_types",
     multiple=True,
-    type=click.Choice(["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]),
+    type=click.Choice(
+        ["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]
+    ),
     help="Only run these analysis types",
 )
 @click.option(
     "--excluding",
     "excluding_types",
     multiple=True,
-    type=click.Choice(["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]),
+    type=click.Choice(
+        ["ai_generated", "deepfake", "nsfw", "quality", "reverse_search"]
+    ),
     help="Exclude these analysis types",
 )
 def batch_image(
@@ -710,7 +740,9 @@ def batch_image(
     client = Client(api_key=_load_api_key())
 
     only = [ImageAnalysisType(t) for t in only_types] if only_types else None
-    excluding = [ImageAnalysisType(t) for t in excluding_types] if excluding_types else None
+    excluding = (
+        [ImageAnalysisType(t) for t in excluding_types] if excluding_types else None
+    )
 
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
@@ -795,7 +827,9 @@ def batch_video(
     client = Client(api_key=_load_api_key())
 
     only = [VideoAnalysisType(t) for t in only_types] if only_types else None
-    excluding = [VideoAnalysisType(t) for t in excluding_types] if excluding_types else None
+    excluding = (
+        [VideoAnalysisType(t) for t in excluding_types] if excluding_types else None
+    )
 
     show_progress = progress if progress is not None else sys.stderr.isatty()
     on_progress, on_complete = _make_progress_callback(show_progress)
@@ -959,11 +993,19 @@ def batch_music(
 
 @batch.command("text")
 @click.argument("files", nargs=-1, type=click.Path(exists=True))
-@click.option("--csv", "csv_path", type=click.Path(exists=True), help="Read file paths from CSV")
-@click.option("--key", "csv_key", default="file_path", help="CSV column name for file path")
-@click.option("--base-dir", type=click.Path(exists=True), help="Base directory for CSV paths")
+@click.option(
+    "--csv", "csv_path", type=click.Path(exists=True), help="Read file paths from CSV"
+)
+@click.option(
+    "--key", "csv_key", default="file_path", help="CSV column name for file path"
+)
+@click.option(
+    "--base-dir", type=click.Path(exists=True), help="Base directory for CSV paths"
+)
 @batch_output_options
-@click.option("--annotations", "-a", is_flag=True, help="Include block-level annotations")
+@click.option(
+    "--annotations", "-a", is_flag=True, help="Include block-level annotations"
+)
 def batch_text(
     files: tuple[str, ...],
     csv_path: str | None,
@@ -985,7 +1027,9 @@ def batch_text(
     if sources_used == 0:
         raise click.ClickException("No input specified. Provide files or --csv")
     if sources_used > 1:
-        raise click.ClickException("Multiple input sources specified. Use only one of: files, --csv")
+        raise click.ClickException(
+            "Multiple input sources specified. Use only one of: files, --csv"
+        )
 
     if csv_path:
         file_list = _collect_files_from_csv(csv_path, csv_key, base_dir)
