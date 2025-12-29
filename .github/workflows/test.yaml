@@ -2,7 +2,6 @@ name: Test
 on: [push]
 jobs:
   test:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -11,28 +10,18 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
-      - name: Set up python ${{ matrix.python-version }}
-        id: setup-python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
+        uses: actions/checkout@v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
-      - name: Load cached venv
-        id: cached-uv-dependencies
-        uses: actions/cache@v3
+        uses: astral-sh/setup-uv@v5
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
         run: uv sync --all-extras --dev
       - name: Run tests
         run: |
-          source .venv/bin/activate
-          coverage run -m pytest 
-          coverage report -m
+          uv run coverage run -m pytest
+          uv run coverage report -m
       - name: Run command
-        run: |
-          source .venv/bin/activate
-          aiornot --help
+        run: uv run aiornot --help
