@@ -20,18 +20,16 @@ Python client for the [AIORNOT](https://aiornot.com) API - detect AI-generated c
 ## Installation
 
 ```bash
-# As a library dependency
-uv add aiornot    # or: pip install aiornot
-
 # As a CLI tool (no install needed)
 uvx aiornot --help
+
+# As a library dependency
+uv add aiornot    # or: pip install aiornot
 ```
 
 Requires Python 3.10+.
 
-## Quick Start
-
-### API Key Setup
+## API Key Setup
 
 Register for an account at [AIORNOT](https://aiornot.com) and get your API key from your [dashboard](https://aiornot.com/dashboard/api).
 
@@ -46,26 +44,121 @@ Copy your token after creating it.
 > [!WARNING]
 > Never share your API key with anyone. It is like a password.
 
-Set it as an environment variable (recommended):
+## CLI Usage
+
+### Token Management
+
+Configure your API key (saved to `~/.aiornot/config.json`):
+
+```bash
+aiornot token config
+```
+
+Verify your token is valid:
+
+```bash
+aiornot token check
+```
+
+Alternatively, set an environment variable:
 
 ```bash
 export AIORNOT_API_KEY=your_api_key
 ```
 
-Or pass it directly to the client:
+### Analyzing Files
 
-```python
-from aiornot import Client
+```bash
+# Analyze an image
+aiornot image photo.jpg
 
-client = Client(api_key="your_api_key")
+# Analyze a video
+aiornot video clip.mp4
+
+# Analyze voice/speech audio
+aiornot voice speech.mp3
+
+# Analyze music
+aiornot music song.wav
+
+# Analyze text (direct input or from file)
+aiornot text "Some text to analyze"
+aiornot text --file document.txt
 ```
 
-### Basic Usage
+### Output Formats
+
+```bash
+# JSON output (default)
+aiornot image photo.jpg --format json
+
+# Human-readable table
+aiornot image photo.jpg --format table
+
+# Minimal (verdict + confidence)
+aiornot image photo.jpg --format minimal
+
+# Just the verdict
+aiornot image photo.jpg --quiet
+```
+
+### Analysis Filtering
+
+```bash
+# Only run specific analyses
+aiornot image photo.jpg --only ai_generated --only deepfake
+
+# Exclude analyses
+aiornot image photo.jpg --excluding nsfw --excluding quality
+```
+
+### Batch Processing
+
+Process multiple files with JSONL output:
+
+```bash
+# Process multiple files
+aiornot batch image photo1.jpg photo2.png photo3.webp
+
+# Process a directory
+aiornot batch image --dir ./photos
+aiornot batch image --dir ./photos --recursive
+
+# Process from CSV file
+aiornot batch image --csv files.csv --key image_path
+aiornot batch image --csv files.csv --key filename --base-dir /data/images
+
+# Output options
+aiornot batch image --dir ./photos --output results.jsonl  # Write to file
+aiornot batch image --dir ./photos --format summary        # Summary only
+aiornot batch image --dir ./photos --format quiet          # Exit code only
+
+# Control concurrency and progress
+aiornot batch image --dir ./photos --concurrency 10 --progress
+aiornot batch image --dir ./photos --fail-fast  # Stop on first error
+```
+
+Available batch commands: `image`, `video`, `voice`, `music`, `text`
+
+JSONL output format (one JSON object per line):
+```jsonl
+{"status":"success","input":"photo1.jpg","result":{...}}
+{"status":"error","input":"photo2.jpg","error":"FileNotFound","message":"..."}
+{"status":"summary","total":2,"succeeded":1,"failed":1,"success_rate":0.5}
+```
+
+## Python Library Usage
+
+### Quick Start
 
 ```python
 from aiornot import Client
 
+# Uses AIORNOT_API_KEY env var or ~/.aiornot/config.json
 client = Client()
+
+# Or pass explicitly
+client = Client(api_key="your_api_key")
 
 # Analyze an image
 resp = client.image_report_from_file("path/to/image.jpg")
@@ -106,8 +199,6 @@ async def main():
 
 asyncio.run(main())
 ```
-
-## Analysis Types
 
 ### Image Analysis
 
@@ -191,7 +282,7 @@ for block, confidence in resp.annotations:
     print(f"[{confidence:.1%}] {block[:50]}...")
 ```
 
-## Batch Processing
+### Batch Processing
 
 Process multiple files concurrently:
 
@@ -234,85 +325,6 @@ results = client.image_report_from_csv(
     key="file_path",
     base_directory="/data/images"
 )
-```
-
-## CLI Usage
-
-```bash
-# Install
-uv tool install aiornot
-
-# Configure API key
-aiornot token config
-
-# Analyze files
-aiornot image photo.jpg
-aiornot video clip.mp4
-aiornot voice speech.mp3
-aiornot music song.wav
-aiornot text "Some text to analyze"
-aiornot text --file document.txt
-```
-
-### Output Formats
-
-```bash
-# JSON output (default)
-aiornot image photo.jpg --format json
-
-# Human-readable table
-aiornot image photo.jpg --format table
-
-# Minimal (verdict + confidence)
-aiornot image photo.jpg --format minimal
-
-# Just the verdict
-aiornot image photo.jpg --quiet
-```
-
-### Analysis Filtering
-
-```bash
-# Only run specific analyses
-aiornot image photo.jpg --only ai_generated --only deepfake
-
-# Exclude analyses
-aiornot image photo.jpg --excluding nsfw --excluding quality
-```
-
-### Batch Processing
-
-Process multiple files with JSONL output:
-
-```bash
-# Process multiple files
-aiornot batch image photo1.jpg photo2.png photo3.webp
-
-# Process a directory
-aiornot batch image --dir ./photos
-aiornot batch image --dir ./photos --recursive
-
-# Process from CSV file
-aiornot batch image --csv files.csv --key image_path
-aiornot batch image --csv files.csv --key filename --base-dir /data/images
-
-# Output options
-aiornot batch image --dir ./photos --output results.jsonl  # Write to file
-aiornot batch image --dir ./photos --format summary        # Summary only
-aiornot batch image --dir ./photos --format quiet          # Exit code only
-
-# Control concurrency and progress
-aiornot batch image --dir ./photos --concurrency 10 --progress
-aiornot batch image --dir ./photos --fail-fast  # Stop on first error
-```
-
-Available batch commands: `image`, `video`, `voice`, `music`, `text`
-
-JSONL output format (one JSON object per line):
-```jsonl
-{"status":"success","input":"photo1.jpg","result":{...}}
-{"status":"error","input":"photo2.jpg","error":"FileNotFound","message":"..."}
-{"status":"summary","total":2,"succeeded":1,"failed":1,"success_rate":0.5}
 ```
 
 ## Error Handling
