@@ -44,7 +44,7 @@ class Client:
         if not self._api_key:
             raise RuntimeError(API_KEY_ERR)
         self._base_url = base_url or BASE_URL
-        self._client = client or httpx
+        self._client = client or httpx.Client()
         self._timeout = timeout
 
     def is_live(self) -> bool:

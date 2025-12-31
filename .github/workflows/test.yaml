@@ -1,12 +1,12 @@
 name: Test
-on: [push]
+on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - name: Check out repository
@@ -19,9 +19,19 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
         run: uv sync --all-extras --dev
-      - name: Run tests
+      - name: Check formatting and linting
         run: |
-          uv run coverage run -m pytest
+          uvx ruff format --check ./src ./tests
+          uvx ruff check ./src ./tests
+      - name: Run tests with coverage
+        run: |
+          uv run coverage run -m pytest -m "not integration"
           uv run coverage report -m
+          uv run coverage xml
+      - name: Upload coverage to Coveralls
+        if: matrix.python-version == '3.12'
+        uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.xml
       - name: Run command
         run: uv run aiornot --help
