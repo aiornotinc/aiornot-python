@@ -1,6 +1,5 @@
 """Tests for request builder functions."""
 
-
 from aiornot.req_builders import (
     image_report_args,
     is_live_args,
