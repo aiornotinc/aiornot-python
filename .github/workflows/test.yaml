@@ -27,11 +27,11 @@ jobs:
         run: |
           uv run coverage run -m pytest -m "not integration"
           uv run coverage report -m
+          uv run coverage xml
       - name: Upload coverage to Coveralls
         if: matrix.python-version == '3.12'
         uses: coverallsapp/github-action@v2
         with:
-          file: .coverage
-          format: python
+          file: coverage.xml
       - name: Run command
         run: uv run aiornot --help
