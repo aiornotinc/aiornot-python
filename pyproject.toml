@@ -22,10 +22,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "httpx>=0.25.1",
-    "pydantic>=2.5.2",
-    "aiofiles>=23.2.1",
-    "click>=8.1.7",
+    "httpx>=0.25.1,<1.0",
+    "pydantic>=2.5.2,<3.0",
+    "aiofiles>=23.2.1,<25.0",
+    "click>=8.1.7,<9.0",
 ]
 
 [project.urls]
@@ -46,9 +46,11 @@ packages = ["src/aiornot"]
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4.3",
-    "ruff>=0.1.6",
-    "coverage>=7.3.2",
+    "pytest>=7.4.3,<9.0",
+    "pytest-mock>=3.12.0,<4.0",
+    "pytest-asyncio>=0.23.0,<1.0",
+    "ruff>=0.1.6,<1.0",
+    "coverage>=7.3.2,<8.0",
 ]
 
 [tool.ruff.lint.isort]
@@ -60,3 +62,21 @@ ban-relative-imports = "all"
 
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["classmethod", "pydantic.validator", "pydantic.root_validator"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: marks tests as integration tests (require API key)",
+]
+
+[tool.coverage.run]
+source = ["src/aiornot"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]

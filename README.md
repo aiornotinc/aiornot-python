@@ -2,6 +2,7 @@
 # AIORNOT Python Client
 
 ![Tests](https://github.com/aiornotinc/aiornot-python/actions/workflows/test.yaml/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/aiornotinc/aiornot-python/badge.svg?branch=main)](https://coveralls.io/github/aiornotinc/aiornot-python?branch=main)
 [![PyPI version](https://badge.fury.io/py/aiornot.svg)](https://badge.fury.io/py/aiornot)
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v2/monitor/y3x3.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
