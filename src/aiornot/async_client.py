@@ -282,7 +282,10 @@ class AsyncClient:
                         )
                     duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result, duration_ms=duration_ms
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
                     duration_ms = (time.perf_counter() - start_time) * 1000
@@ -353,7 +356,10 @@ class AsyncClient:
                         )
                     duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result, duration_ms=duration_ms
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
                     duration_ms = (time.perf_counter() - start_time) * 1000
@@ -408,7 +414,10 @@ class AsyncClient:
                         result = await self.voice_report(item)
                     duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result, duration_ms=duration_ms
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
                     duration_ms = (time.perf_counter() - start_time) * 1000
@@ -463,7 +472,10 @@ class AsyncClient:
                         result = await self.music_report(item)
                     duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result, duration_ms=duration_ms
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
                     duration_ms = (time.perf_counter() - start_time) * 1000
@@ -522,7 +534,10 @@ class AsyncClient:
                     )
                     duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=text, status="success", result=result, duration_ms=duration_ms
+                        input=text,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
                     duration_ms = (time.perf_counter() - start_time) * 1000
