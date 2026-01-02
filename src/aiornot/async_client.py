@@ -2,6 +2,7 @@
 
 import asyncio
 import csv
+import time
 from pathlib import Path
 from typing import Callable, Sequence, Union, cast
 
@@ -263,6 +264,7 @@ class AsyncClient:
                 external_id = (
                     f"{external_id_prefix}_{idx}" if external_id_prefix else None
                 )
+                start_time = time.perf_counter()
                 try:
                     if isinstance(item, (str, Path)):
                         result = await self.image_report_from_file(
@@ -278,10 +280,15 @@ class AsyncClient:
                             excluding=excluding,
                             external_id=external_id,
                         )
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     if fail_fast:
                         raise
                     batch_result = BatchResult(
@@ -289,6 +296,7 @@ class AsyncClient:
                         status="error",
                         error=type(e).__name__,
                         message=str(e),
+                        duration_ms=duration_ms,
                     )
                 finally:
                     completed += 1
@@ -330,6 +338,7 @@ class AsyncClient:
                 external_id = (
                     f"{external_id_prefix}_{idx}" if external_id_prefix else None
                 )
+                start_time = time.perf_counter()
                 try:
                     if isinstance(item, (str, Path)):
                         result = await self.video_report_from_file(
@@ -345,10 +354,15 @@ class AsyncClient:
                             excluding=excluding,
                             external_id=external_id,
                         )
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     if fail_fast:
                         raise
                     batch_result = BatchResult(
@@ -356,6 +370,7 @@ class AsyncClient:
                         status="error",
                         error=type(e).__name__,
                         message=str(e),
+                        duration_ms=duration_ms,
                     )
                 finally:
                     completed += 1
@@ -391,15 +406,21 @@ class AsyncClient:
         ) -> BatchResult[VoiceReportResponse]:
             nonlocal completed
             async with semaphore:
+                start_time = time.perf_counter()
                 try:
                     if isinstance(item, (str, Path)):
                         result = await self.voice_report_from_file(item)
                     else:
                         result = await self.voice_report(item)
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     if fail_fast:
                         raise
                     batch_result = BatchResult(
@@ -407,6 +428,7 @@ class AsyncClient:
                         status="error",
                         error=type(e).__name__,
                         message=str(e),
+                        duration_ms=duration_ms,
                     )
                 finally:
                     completed += 1
@@ -442,15 +464,21 @@ class AsyncClient:
         ) -> BatchResult[MusicReportResponse]:
             nonlocal completed
             async with semaphore:
+                start_time = time.perf_counter()
                 try:
                     if isinstance(item, (str, Path)):
                         result = await self.music_report_from_file(item)
                     else:
                         result = await self.music_report(item)
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=item, status="success", result=result
+                        input=item,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     if fail_fast:
                         raise
                     batch_result = BatchResult(
@@ -458,6 +486,7 @@ class AsyncClient:
                         status="error",
                         error=type(e).__name__,
                         message=str(e),
+                        duration_ms=duration_ms,
                     )
                 finally:
                     completed += 1
@@ -496,16 +525,22 @@ class AsyncClient:
                 external_id = (
                     f"{external_id_prefix}_{idx}" if external_id_prefix else None
                 )
+                start_time = time.perf_counter()
                 try:
                     result = await self.text_report(
                         text,
                         include_annotations=include_annotations,
                         external_id=external_id,
                     )
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     batch_result = BatchResult(
-                        input=text, status="success", result=result
+                        input=text,
+                        status="success",
+                        result=result,
+                        duration_ms=duration_ms,
                     )
                 except Exception as e:
+                    duration_ms = (time.perf_counter() - start_time) * 1000
                     if fail_fast:
                         raise
                     batch_result = BatchResult(
@@ -513,6 +548,7 @@ class AsyncClient:
                         status="error",
                         error=type(e).__name__,
                         message=str(e),
+                        duration_ms=duration_ms,
                     )
                 finally:
                     completed += 1

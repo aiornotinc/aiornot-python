@@ -19,6 +19,7 @@ class BatchResult(Generic[T]):
     result: T | None = None
     error: str | None = None
     message: str | None = None
+    duration_ms: float | None = None
 
     @property
     def success(self) -> bool:
@@ -27,22 +28,21 @@ class BatchResult(Generic[T]):
     def to_jsonl(self) -> str:
         """Serialize to JSONL-compatible string."""
         if self.success:
-            return json.dumps(
-                {
-                    "status": "success",
-                    "input": str(self.input),
-                    "result": self.result.model_dump() if self.result else None,
-                }
-            )
+            data = {
+                "status": "success",
+                "input": str(self.input),
+                "result": self.result.model_dump() if self.result else None,
+            }
         else:
-            return json.dumps(
-                {
-                    "status": "error",
-                    "input": str(self.input),
-                    "error": self.error,
-                    "message": self.message,
-                }
-            )
+            data = {
+                "status": "error",
+                "input": str(self.input),
+                "error": self.error,
+                "message": self.message,
+            }
+        if self.duration_ms is not None:
+            data["duration_ms"] = self.duration_ms
+        return json.dumps(data)
 
 
 @dataclass
