@@ -12,14 +12,20 @@ class FakeResp(BaseModel):
     external_id: Optional[str] = None
 
 
+class FakeTokenResp(BaseModel):
+    is_valid: bool
+
+
 class FakeClient:
-    image_calls = []
-    text_calls = []
+    image_calls: list[dict[str, object]] = []
+    text_calls: list[dict[str, object]] = []
 
     def __init__(self, api_key):
         self.api_key = api_key
 
-    def image_report_by_file_sync(self, path, external_id=None, only=None, excluding=None):
+    def image_report_by_file_sync(
+        self, path, external_id=None, only=None, excluding=None
+    ):
         self.image_calls.append(
             {
                 "path": str(path),
@@ -39,6 +45,9 @@ class FakeClient:
             }
         )
         return FakeResp(id=f"txt-{len(self.text_calls)}", external_id=external_id)
+
+    def check_token(self):
+        return FakeTokenResp(is_valid=True)
 
 
 def test_cli_help_lists_supported_commands():
@@ -135,6 +144,11 @@ def test_image_batch_csv_writes_correlatable_jsonl_and_resumes(tmp_path, monkeyp
     assert lines[1]["input"]["row_number"] == 3
     assert lines[1]["ok"] is True
     assert lines[1]["response"]["id"] == "img-1"
+    assert "[ok] second" in result.output
+    assert (
+        f"Wrote 1 records to {output} (1 succeeded, 0 failed, 1 skipped by resume)"
+        in result.output
+    )
 
 
 def test_text_batch_scan_writes_jsonl(tmp_path, monkeypatch):
@@ -169,3 +183,20 @@ def test_text_batch_scan_writes_jsonl(tmp_path, monkeypatch):
     assert record["input"]["id"] == "sample.txt"
     assert record["input"]["relative_path"] == "sample.txt"
     assert record["ok"] is True
+
+
+def test_token_config_hides_entered_api_key(tmp_path, monkeypatch):
+    saved = []
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr("aiornot.cli.Client", FakeClient)
+    monkeypatch.setattr("aiornot.cli.operations.save_api_key", saved.append)
+
+    result = CliRunner().invoke(
+        cli,
+        ["token", "config"],
+        input="secret-token\n",
+    )
+
+    assert result.exit_code == 0
+    assert saved == ["secret-token"]
+    assert "secret-token" not in result.output

@@ -74,6 +74,8 @@ class BatchJob:
 @dataclass
 class BatchSummary:
     processed: int
+    succeeded: int
+    failed: int
     skipped: int
     output: Path
 
@@ -97,8 +99,10 @@ def load_api_key() -> Optional[str]:
 def save_api_key(api_key: str) -> None:
     config_path = Path.home() / ".aiornot" / "config.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    with config_path.open("w") as f:
+    fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
         json.dump({"api_token": api_key}, f)
+    os.chmod(config_path, 0o600)
 
 
 def client_from_config() -> Client:
@@ -297,11 +301,14 @@ def run_batch(
     output: Path,
     resume: bool,
     analyze: Callable[[BatchJob], BaseModel],
+    progress: Optional[Callable[[Dict[str, object]], None]] = None,
 ) -> BatchSummary:
     output.parent.mkdir(parents=True, exist_ok=True)
     output_path = output.resolve()
     completed = completed_input_ids(output) if resume else set()
     processed = 0
+    succeeded = 0
+    failed = 0
     skipped = 0
 
     with output.open("a") as f:
@@ -315,11 +322,25 @@ def run_batch(
             f.write(json.dumps(record, sort_keys=True) + "\n")
             f.flush()
             processed += 1
+            if record.get("ok") is True:
+                succeeded += 1
+            else:
+                failed += 1
+            if progress is not None:
+                progress(record)
 
-    return BatchSummary(processed=processed, skipped=skipped, output=output)
+    return BatchSummary(
+        processed=processed,
+        succeeded=succeeded,
+        failed=failed,
+        skipped=skipped,
+        output=output,
+    )
 
 
-def run_job(job: BatchJob, analyze: Callable[[BatchJob], BaseModel]) -> Dict[str, object]:
+def run_job(
+    job: BatchJob, analyze: Callable[[BatchJob], BaseModel]
+) -> Dict[str, object]:
     record: Dict[str, object] = {"input": job.input_record(), "ok": False}
     try:
         if job.preflight_error:

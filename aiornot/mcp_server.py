@@ -183,9 +183,7 @@ def _analyze_batch_job(client: Client, job: operations.BatchJob):
         return operations.analyze_voice_job(client, job)
     if job.modality == "music":
         return operations.analyze_music_job(client, job)
-    raise ValueError(
-        "modality must be one of image, text, video, voice, or music"
-    )
+    raise ValueError("modality must be one of image, text, video, voice, or music")
 
 
 def _default_extensions(modality: str) -> set:
@@ -197,9 +195,7 @@ def _default_extensions(modality: str) -> set:
         return operations.VIDEO_EXTENSIONS
     if modality in {"voice", "music"}:
         return operations.AUDIO_EXTENSIONS
-    raise ValueError(
-        "modality must be one of image, text, video, voice, or music"
-    )
+    raise ValueError("modality must be one of image, text, video, voice, or music")
 
 
 def main() -> None:

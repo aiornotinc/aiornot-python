@@ -23,7 +23,6 @@ import httpx
 from pathlib import Path
 import aiornot.common_client as cc
 
-
 _SHARED_CLIENT = httpx.AsyncClient()
 
 
@@ -37,7 +36,9 @@ class AsyncClient(BaseClient):
         retry_backoff: float = 0.25,
         retry_status_codes: Optional[Set[int]] = None,
     ):
-        super().__init__(api_key, base_url, max_retries, retry_backoff, retry_status_codes)
+        super().__init__(
+            api_key, base_url, max_retries, retry_backoff, retry_status_codes
+        )
         self._client = client or _SHARED_CLIENT
 
     async def is_live(self) -> bool:
@@ -60,7 +61,7 @@ class AsyncClient(BaseClient):
                     external_id=external_id,
                     only=only,
                     excluding=excluding,
-                )
+                ),
             )
         )
 
@@ -78,7 +79,9 @@ class AsyncClient(BaseClient):
 
     async def check_token(self) -> CheckTokenResp:
         return cc.check_token(
-            await self._request("get", **check_token_args(self._api_key, self._base_url))
+            await self._request(
+                "get", **check_token_args(self._api_key, self._base_url)
+            )
         )
 
     async def text_report_sync(
@@ -96,7 +99,7 @@ class AsyncClient(BaseClient):
                     base_url=self._base_url,
                     external_id=external_id,
                     include_annotations=include_annotations,
-                )
+                ),
             )
         )
 
@@ -108,7 +111,7 @@ class AsyncClient(BaseClient):
                     data,
                     self._api_key,
                     base_url=self._base_url,
-                )
+                ),
             )
         )
 
@@ -124,7 +127,7 @@ class AsyncClient(BaseClient):
                     data,
                     self._api_key,
                     base_url=self._base_url,
-                )
+                ),
             )
         )
 
@@ -149,7 +152,7 @@ class AsyncClient(BaseClient):
                     external_id=external_id,
                     only=only,
                     excluding=excluding,
-                )
+                ),
             )
         )
 

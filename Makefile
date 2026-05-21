@@ -1,5 +1,5 @@
 format:
-	black ./aiornot ./tests && ruff check --fix ./aiornot ./tests
+	uvx black ./aiornot ./tests && uvx ruff check --fix ./aiornot ./tests
 
 lint:
-	black --check ./aiornot ./tests && ruff check ./aiornot ./tests && mypy --install-types --non-interactive ./aiornot ./tests
+	uvx black --check ./aiornot ./tests && uvx ruff check ./aiornot ./tests && uvx --with aiofiles --with click --with httpx --with "mcp>=1.0.0" --with pydantic --with types-aiofiles --with types-jsonschema --with types-Pygments --with types-PyYAML mypy --install-types --non-interactive ./aiornot ./tests

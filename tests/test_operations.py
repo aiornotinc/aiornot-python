@@ -1,3 +1,4 @@
+import stat
 from pathlib import Path
 from typing import Optional
 
@@ -16,7 +17,9 @@ class FakeClient:
         self.image_calls = []
         self.text_calls = []
 
-    def image_report_by_file_sync(self, path, external_id=None, only=None, excluding=None):
+    def image_report_by_file_sync(
+        self, path, external_id=None, only=None, excluding=None
+    ):
         self.image_calls.append(
             {
                 "path": str(path),
@@ -64,7 +67,9 @@ def test_analyze_image_file_returns_json_safe_record(tmp_path):
 
 def test_text_csv_jobs_accept_literal_text(tmp_path):
     csv_path = tmp_path / "texts.csv"
-    csv_path.write_text("id,text,external_id,include_annotations\none,hello,ext-1,true\n")
+    csv_path.write_text(
+        "id,text,external_id,include_annotations\none,hello,ext-1,true\n"
+    )
 
     jobs = list(
         operations.csv_jobs(
@@ -90,3 +95,13 @@ def test_require_file_rejects_directories(tmp_path):
         assert "is not a file" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_save_api_key_uses_owner_only_file_permissions(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    operations.save_api_key("secret-token")
+
+    config_path = tmp_path / ".aiornot" / "config.json"
+    assert config_path.read_text() == '{"api_token": "secret-token"}'
+    assert stat.S_IMODE(config_path.stat().st_mode) == 0o600

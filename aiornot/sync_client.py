@@ -33,7 +33,9 @@ class Client(BaseClient):
         retry_backoff: float = 0.25,
         retry_status_codes: Optional[Set[int]] = None,
     ):
-        super().__init__(api_key, base_url, max_retries, retry_backoff, retry_status_codes)
+        super().__init__(
+            api_key, base_url, max_retries, retry_backoff, retry_status_codes
+        )
         self._client = client or httpx
 
     def is_live(self) -> bool:
@@ -56,7 +58,7 @@ class Client(BaseClient):
                     external_id=external_id,
                     only=only,
                     excluding=excluding,
-                )
+                ),
             )
         )
 
@@ -92,7 +94,7 @@ class Client(BaseClient):
                     base_url=self._base_url,
                     external_id=external_id,
                     include_annotations=include_annotations,
-                )
+                ),
             )
         )
 
@@ -104,7 +106,7 @@ class Client(BaseClient):
                     data,
                     self._api_key,
                     base_url=self._base_url,
-                )
+                ),
             )
         )
 
@@ -120,7 +122,7 @@ class Client(BaseClient):
                     data,
                     self._api_key,
                     base_url=self._base_url,
-                )
+                ),
             )
         )
 
@@ -145,7 +147,7 @@ class Client(BaseClient):
                     external_id=external_id,
                     only=only,
                     excluding=excluding,
-                )
+                ),
             )
         )
 

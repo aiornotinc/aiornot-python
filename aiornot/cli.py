@@ -64,11 +64,15 @@ def image_single(source, external_id, only, excluding):
 
 
 @image.command("batch-csv")
-@click.argument("csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option("--output", required=True, type=click.Path(path_type=Path))
 @click.option("--path-column", default="path", show_default=True)
 @click.option("--id-column", default="id", show_default=True)
-@click.option("--external-id", help="External ID applied to rows without a column value")
+@click.option(
+    "--external-id", help="External ID applied to rows without a column value"
+)
 @click.option("--only", multiple=True, help="Only include specific analysis types")
 @click.option("--excluding", multiple=True, help="Exclude specific analysis types")
 @click.option("--resume/--no-resume", default=True, show_default=True)
@@ -94,7 +98,9 @@ def image_batch_csv(
 @image.command("batch-scan")
 @click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--output", required=True, type=click.Path(path_type=Path))
-@click.option("--extension", "extensions", multiple=True, help="File extension to include")
+@click.option(
+    "--extension", "extensions", multiple=True, help="File extension to include"
+)
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
 @click.option("--external-id-prefix", help="Prefix for generated external IDs")
 @click.option("--only", multiple=True, help="Only include specific analysis types")
@@ -149,7 +155,9 @@ def text_single(source, external_id, include_annotations):
     SOURCE is a text file path, or '-' to read from stdin.
     """
     client = Client(_load_api_key())
-    text_value = sys.stdin.read() if source == "-" else _require_file(source).read_text()
+    text_value = (
+        sys.stdin.read() if source == "-" else _require_file(source).read_text()
+    )
     _print_record_as_json(
         operations.analyze_text_value(
             text_value,
@@ -161,12 +169,16 @@ def text_single(source, external_id, include_annotations):
 
 
 @text.command("batch-csv")
-@click.argument("csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option("--output", required=True, type=click.Path(path_type=Path))
 @click.option("--path-column", default="path", show_default=True)
 @click.option("--text-column", default="text", show_default=True)
 @click.option("--id-column", default="id", show_default=True)
-@click.option("--external-id", help="External ID applied to rows without a column value")
+@click.option(
+    "--external-id", help="External ID applied to rows without a column value"
+)
 @click.option(
     "--include-annotations",
     is_flag=True,
@@ -202,7 +214,9 @@ def text_batch_csv(
 @text.command("batch-scan")
 @click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--output", required=True, type=click.Path(path_type=Path))
-@click.option("--extension", "extensions", multiple=True, help="File extension to include")
+@click.option(
+    "--extension", "extensions", multiple=True, help="File extension to include"
+)
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
 @click.option("--external-id-prefix", help="Prefix for generated external IDs")
 @click.option(
@@ -212,7 +226,13 @@ def text_batch_csv(
 )
 @click.option("--resume/--no-resume", default=True, show_default=True)
 def text_batch_scan(
-    folder, output, extensions, recursive, external_id_prefix, include_annotations, resume
+    folder,
+    output,
+    extensions,
+    recursive,
+    external_id_prefix,
+    include_annotations,
+    resume,
 ):
     """
     Analyze text files found under a folder and write JSONL output.
@@ -259,11 +279,15 @@ def video_single(source, external_id, only, excluding):
 
 
 @video.command("batch-csv")
-@click.argument("csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option("--output", required=True, type=click.Path(path_type=Path))
 @click.option("--path-column", default="path", show_default=True)
 @click.option("--id-column", default="id", show_default=True)
-@click.option("--external-id", help="External ID applied to rows without a column value")
+@click.option(
+    "--external-id", help="External ID applied to rows without a column value"
+)
 @click.option("--only", multiple=True, help="Only include specific analysis types")
 @click.option("--excluding", multiple=True, help="Exclude specific analysis types")
 @click.option("--resume/--no-resume", default=True, show_default=True)
@@ -289,7 +313,9 @@ def video_batch_csv(
 @video.command("batch-scan")
 @click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--output", required=True, type=click.Path(path_type=Path))
-@click.option("--extension", "extensions", multiple=True, help="File extension to include")
+@click.option(
+    "--extension", "extensions", multiple=True, help="File extension to include"
+)
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
 @click.option("--external-id-prefix", help="Prefix for generated external IDs")
 @click.option("--only", multiple=True, help="Only include specific analysis types")
@@ -340,7 +366,9 @@ def voice_single(source):
 
 
 @voice.command("batch-csv")
-@click.argument("csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option("--output", required=True, type=click.Path(path_type=Path))
 @click.option("--path-column", default="path", show_default=True)
 @click.option("--id-column", default="id", show_default=True)
@@ -357,7 +385,9 @@ def voice_batch_csv(csv_path, output, path_column, id_column, resume):
 @voice.command("batch-scan")
 @click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--output", required=True, type=click.Path(path_type=Path))
-@click.option("--extension", "extensions", multiple=True, help="File extension to include")
+@click.option(
+    "--extension", "extensions", multiple=True, help="File extension to include"
+)
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
 @click.option("--resume/--no-resume", default=True, show_default=True)
 def voice_batch_scan(folder, output, extensions, recursive, resume):
@@ -365,7 +395,9 @@ def voice_batch_scan(folder, output, extensions, recursive, resume):
     Analyze voice audio files found under a folder and write JSONL output.
     """
     client = Client(_load_api_key())
-    jobs = _scan_jobs("voice", folder, _extensions(extensions, AUDIO_EXTENSIONS), recursive)
+    jobs = _scan_jobs(
+        "voice", folder, _extensions(extensions, AUDIO_EXTENSIONS), recursive
+    )
     _run_batch(jobs, output, resume, lambda job: _analyze_voice(client, job))
 
 
@@ -388,7 +420,9 @@ def music_single(source):
 
 
 @music.command("batch-csv")
-@click.argument("csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument(
+    "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option("--output", required=True, type=click.Path(path_type=Path))
 @click.option("--path-column", default="path", show_default=True)
 @click.option("--id-column", default="id", show_default=True)
@@ -405,7 +439,9 @@ def music_batch_csv(csv_path, output, path_column, id_column, resume):
 @music.command("batch-scan")
 @click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--output", required=True, type=click.Path(path_type=Path))
-@click.option("--extension", "extensions", multiple=True, help="File extension to include")
+@click.option(
+    "--extension", "extensions", multiple=True, help="File extension to include"
+)
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
 @click.option("--resume/--no-resume", default=True, show_default=True)
 def music_batch_scan(folder, output, extensions, recursive, resume):
@@ -413,7 +449,9 @@ def music_batch_scan(folder, output, extensions, recursive, resume):
     Analyze music audio files found under a folder and write JSONL output.
     """
     client = Client(_load_api_key())
-    jobs = _scan_jobs("music", folder, _extensions(extensions, AUDIO_EXTENSIONS), recursive)
+    jobs = _scan_jobs(
+        "music", folder, _extensions(extensions, AUDIO_EXTENSIONS), recursive
+    )
     _run_batch(jobs, output, resume, lambda job: _analyze_music(client, job))
 
 
@@ -433,7 +471,7 @@ def config():
     click.echo("Go to https://aiornot.com/dashboard/api to get an API key.")
 
     while True:
-        api_key = click.prompt("API key")
+        api_key = click.prompt("API key", hide_input=True)
         client = Client(api_key=api_key)
         if client.check_token().is_valid:
             break
@@ -494,14 +532,16 @@ def _run_batch(
     resume: bool,
     analyze: Callable[[BatchJob], BaseModel],
 ) -> None:
-    summary = operations.run_batch(jobs, output, resume, analyze)
-    click.echo(
-        f"Wrote {summary.processed} records to {summary.output}"
-        + (f" ({summary.skipped} skipped by resume)" if summary.skipped else "")
-    )
+    summary = operations.run_batch(jobs, output, resume, analyze, _print_batch_progress)
+    details = f"{summary.succeeded} succeeded, {summary.failed} failed"
+    if summary.skipped:
+        details += f", {summary.skipped} skipped by resume"
+    click.echo(f"Wrote {summary.processed} records to {summary.output} ({details})")
 
 
-def _run_job(job: BatchJob, analyze: Callable[[BatchJob], BaseModel]) -> Dict[str, object]:
+def _run_job(
+    job: BatchJob, analyze: Callable[[BatchJob], BaseModel]
+) -> Dict[str, object]:
     return operations.run_job(job, analyze)
 
 
@@ -592,6 +632,15 @@ def _require_file(source: str) -> Path:
 
 def _print_record_as_json(record: Dict[str, object]) -> None:
     click.echo(json.dumps(record, indent=4))
+
+
+def _print_batch_progress(record: Dict[str, object]) -> None:
+    input_record = record.get("input", {})
+    input_id = "<unknown>"
+    if isinstance(input_record, dict):
+        input_id = str(input_record.get("id") or input_id)
+    status = "ok" if record.get("ok") is True else "error"
+    click.echo(f"[{status}] {input_id}")
 
 
 if __name__ == "__main__":
