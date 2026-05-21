@@ -185,6 +185,14 @@ def test_text_batch_scan_writes_jsonl(tmp_path, monkeypatch):
     assert record["ok"] is True
 
 
+def test_batch_scan_help_lists_relpath_md5_external_id_option():
+    result = CliRunner().invoke(cli, ["image", "batch-scan", "--help"])
+
+    assert result.exit_code == 0
+    assert "--use-relpath-md5-as-external-id" in result.output
+    assert "--external-id-prefix" not in result.output
+
+
 def test_token_config_hides_entered_api_key(tmp_path, monkeypatch):
     saved = []
     monkeypatch.setenv("HOME", str(tmp_path))

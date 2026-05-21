@@ -1,5 +1,7 @@
 from typing import Any, Optional, List
+
 from aiornot.settings import BASE_URL
+from aiornot.validation import validate_external_id
 
 _THREE_MINUTES = 180
 
@@ -30,6 +32,7 @@ def classify_image_blob_args(
     }
 
     params: dict[str, Any] = {}
+    external_id = validate_external_id(external_id)
     if external_id:
         params["external_id"] = external_id
     if only:
@@ -73,6 +76,7 @@ def text_report_sync_args(
     }
 
     params: dict[str, Any] = {}
+    external_id = validate_external_id(external_id)
     if external_id:
         params["external_id"] = external_id
     if include_annotations:
@@ -135,6 +139,7 @@ def video_report_sync_args(
     }
 
     params: dict[str, Any] = {}
+    external_id = validate_external_id(external_id)
     if external_id:
         params["external_id"] = external_id
     if only:

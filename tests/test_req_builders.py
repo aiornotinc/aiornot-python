@@ -1,4 +1,5 @@
 import httpx
+import pytest
 
 from aiornot.common_client import check_token
 from aiornot.req_builders import (
@@ -47,6 +48,34 @@ def test_report_builders_use_v2_sibling_routes():
         "include_annotations": True,
     }
     assert "json" not in text
+
+
+def test_report_builders_omit_default_external_id():
+    image = classify_image_blob_args(b"image", "token")
+    text = text_report_sync_args("hello world", "token")
+    video = video_report_sync_args(b"video", "token")
+
+    assert "params" not in image
+    assert "params" not in text
+    assert "params" not in video
+
+
+def test_external_id_is_limited_to_uuid_length():
+    max_length_external_id = "x" * 36
+    too_long_external_id = "x" * 37
+
+    assert (
+        classify_image_blob_args(b"image", "token", external_id=max_length_external_id)[
+            "params"
+        ]["external_id"]
+        == max_length_external_id
+    )
+    with pytest.raises(ValueError, match="external_id"):
+        classify_image_blob_args(b"image", "token", external_id=too_long_external_id)
+    with pytest.raises(ValueError, match="external_id"):
+        text_report_sync_args("hello world", "token", external_id=too_long_external_id)
+    with pytest.raises(ValueError, match="external_id"):
+        video_report_sync_args(b"video", "token", external_id=too_long_external_id)
 
 
 def test_check_token_uses_authenticated_gateway_probe():

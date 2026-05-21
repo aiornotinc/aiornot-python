@@ -1,3 +1,4 @@
+import hashlib
 import stat
 from pathlib import Path
 from typing import Optional
@@ -95,6 +96,29 @@ def test_require_file_rejects_directories(tmp_path):
         assert "is not a file" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_scan_jobs_can_use_relative_path_md5_as_external_id(tmp_path):
+    source_dir = tmp_path / "images"
+    nested_dir = source_dir / "nested"
+    nested_dir.mkdir(parents=True)
+    source = nested_dir / "sample.jpg"
+    source.write_bytes(b"image")
+
+    jobs = list(
+        operations.scan_jobs(
+            "image",
+            source_dir,
+            [".jpg"],
+            recursive=True,
+            use_relpath_md5_as_external_id=True,
+        )
+    )
+
+    assert len(jobs) == 1
+    assert jobs[0].relative_path == "nested/sample.jpg"
+    assert jobs[0].external_id == hashlib.md5(b"nested/sample.jpg").hexdigest()
+    assert len(jobs[0].external_id) == 32
 
 
 def test_save_api_key_uses_owner_only_file_permissions(tmp_path, monkeypatch):

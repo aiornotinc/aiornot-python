@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import os
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from httpx import HTTPStatusError
 from pydantic import BaseModel
 
 from aiornot.sync_client import Client
+from aiornot.validation import validate_external_id
 
 IMAGE_EXTENSIONS = {
     ".bmp",
@@ -225,7 +227,9 @@ def csv_jobs(
         for row_number, row in enumerate(reader, start=2):
             source = _row_value(row, path_column, "source", "file")
             literal_text = _row_value(row, text_column) if modality == "text" else None
-            row_external_id = _row_value(row, "external_id") or external_id
+            row_external_id = validate_external_id(
+                _row_value(row, "external_id") or external_id
+            )
             row_only = split_values(_row_value(row, "only")) or only
             row_excluding = split_values(_row_value(row, "excluding")) or excluding
             row_annotations = parse_bool(
@@ -270,7 +274,7 @@ def scan_jobs(
     folder: Path,
     extensions: List[str],
     recursive: bool,
-    external_id_prefix: Optional[str] = None,
+    use_relpath_md5_as_external_id: bool = False,
     only: Optional[List[str]] = None,
     excluding: Optional[List[str]] = None,
     include_annotations: bool = False,
@@ -281,8 +285,8 @@ def scan_jobs(
             continue
         relative_path = path.relative_to(folder).as_posix()
         external_id = None
-        if external_id_prefix:
-            external_id = f"{external_id_prefix}{relative_path}"
+        if use_relpath_md5_as_external_id:
+            external_id = hashlib.md5(relative_path.encode("utf-8")).hexdigest()
         yield BatchJob(
             input_id=relative_path,
             modality=modality,

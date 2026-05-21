@@ -102,7 +102,11 @@ def image_batch_csv(
     "--extension", "extensions", multiple=True, help="File extension to include"
 )
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
-@click.option("--external-id-prefix", help="Prefix for generated external IDs")
+@click.option(
+    "--use-relpath-md5-as-external-id",
+    is_flag=True,
+    help="Use each relative file path's MD5 hash as external ID",
+)
 @click.option("--only", multiple=True, help="Only include specific analysis types")
 @click.option("--excluding", multiple=True, help="Exclude specific analysis types")
 @click.option("--resume/--no-resume", default=True, show_default=True)
@@ -111,7 +115,7 @@ def image_batch_scan(
     output,
     extensions,
     recursive,
-    external_id_prefix,
+    use_relpath_md5_as_external_id,
     only,
     excluding,
     resume,
@@ -125,7 +129,7 @@ def image_batch_scan(
         folder,
         _extensions(extensions, IMAGE_EXTENSIONS),
         recursive,
-        external_id_prefix=external_id_prefix,
+        use_relpath_md5_as_external_id=use_relpath_md5_as_external_id,
         only=_option_list(only),
         excluding=_option_list(excluding),
     )
@@ -218,7 +222,11 @@ def text_batch_csv(
     "--extension", "extensions", multiple=True, help="File extension to include"
 )
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
-@click.option("--external-id-prefix", help="Prefix for generated external IDs")
+@click.option(
+    "--use-relpath-md5-as-external-id",
+    is_flag=True,
+    help="Use each relative file path's MD5 hash as external ID",
+)
 @click.option(
     "--include-annotations",
     is_flag=True,
@@ -230,7 +238,7 @@ def text_batch_scan(
     output,
     extensions,
     recursive,
-    external_id_prefix,
+    use_relpath_md5_as_external_id,
     include_annotations,
     resume,
 ):
@@ -243,7 +251,7 @@ def text_batch_scan(
         folder,
         _extensions(extensions, TEXT_EXTENSIONS),
         recursive,
-        external_id_prefix=external_id_prefix,
+        use_relpath_md5_as_external_id=use_relpath_md5_as_external_id,
         include_annotations=include_annotations,
     )
     _run_batch(jobs, output, resume, lambda job: _analyze_text(client, job))
@@ -317,7 +325,11 @@ def video_batch_csv(
     "--extension", "extensions", multiple=True, help="File extension to include"
 )
 @click.option("--recursive/--no-recursive", default=True, show_default=True)
-@click.option("--external-id-prefix", help="Prefix for generated external IDs")
+@click.option(
+    "--use-relpath-md5-as-external-id",
+    is_flag=True,
+    help="Use each relative file path's MD5 hash as external ID",
+)
 @click.option("--only", multiple=True, help="Only include specific analysis types")
 @click.option("--excluding", multiple=True, help="Exclude specific analysis types")
 @click.option("--resume/--no-resume", default=True, show_default=True)
@@ -326,7 +338,7 @@ def video_batch_scan(
     output,
     extensions,
     recursive,
-    external_id_prefix,
+    use_relpath_md5_as_external_id,
     only,
     excluding,
     resume,
@@ -340,7 +352,7 @@ def video_batch_scan(
         folder,
         _extensions(extensions, VIDEO_EXTENSIONS),
         recursive,
-        external_id_prefix=external_id_prefix,
+        use_relpath_md5_as_external_id=use_relpath_md5_as_external_id,
         only=_option_list(only),
         excluding=_option_list(excluding),
     )
@@ -509,7 +521,7 @@ def _scan_jobs(
     folder: Path,
     extensions: List[str],
     recursive: bool,
-    external_id_prefix: Optional[str] = None,
+    use_relpath_md5_as_external_id: bool = False,
     only: Optional[List[str]] = None,
     excluding: Optional[List[str]] = None,
     include_annotations: bool = False,
@@ -519,7 +531,7 @@ def _scan_jobs(
         folder,
         extensions,
         recursive,
-        external_id_prefix=external_id_prefix,
+        use_relpath_md5_as_external_id=use_relpath_md5_as_external_id,
         only=only,
         excluding=excluding,
         include_annotations=include_annotations,
