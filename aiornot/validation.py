@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 EXTERNAL_ID_MAX_LENGTH = 36
 
 
