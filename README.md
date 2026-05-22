@@ -260,6 +260,25 @@ Run the MCP server with the optional MCP dependencies:
 uvx --from "aiornot[mcp]" aiornot-mcp
 ```
 
+Add the MCP server to Claude Code:
+
+```bash
+claude mcp add -s user \
+  -e AIORNOT_API_KEY=your_api_key \
+  aiornot -- uvx --from "aiornot[mcp]" aiornot-mcp
+```
+
+Add the MCP server to Codex:
+
+```bash
+codex mcp add \
+  --env AIORNOT_API_KEY=your_api_key \
+  aiornot -- uvx --from "aiornot[mcp]" aiornot-mcp
+```
+
+If `AIORNOT_API_KEY` is already available in the environment where your MCP
+client runs, you can omit the `-e` or `--env` flag.
+
 Example local MCP client configuration:
 
 ```json
