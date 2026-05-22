@@ -1,6 +1,6 @@
 [project]
 name = "aiornot"
-version = "0.0.5"
+version = "0.1.0"
 description = "Python client for the AIORNOT API."
 readme = "README.md"
 authors = [
