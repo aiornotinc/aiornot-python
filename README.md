@@ -4,19 +4,19 @@
 [![PyPI version](https://badge.fury.io/py/aiornot.svg)](https://badge.fury.io/py/aiornot)
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v2/monitor/y3x3.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
-Python SDK, CLI, and MCP server for the [AIORNOT](https://aiornot.com) API.
+CLI, MCP server, and Python SDK for the [AIORNOT](https://aiornot.com) API.
 
-AIORNOT supports image, text, video, voice, and music analysis. Use the Python
-client in your application code, the CLI for local files and batch workflows, or
-the MCP server to expose the same analysis tools to MCP-compatible clients.
+AIORNOT supports image, text, video, voice, and music analysis. Use the CLI for
+local files and batch workflows, the MCP server to expose analysis tools to
+MCP-compatible clients, or the Python client in your application code.
 
 ## Quick Start
 
 AIORNOT requires Python 3.9 or newer. The MCP server requires Python 3.10 or newer.
 
-We recommend [uv](https://docs.astral.sh/uv/) because it can install the SDK,
-run the CLI with `uvx`, manage isolated global tools, and provide `uvx` for the
-URL download workflow.
+We recommend [uv](https://docs.astral.sh/uv/) because it can run the CLI with
+`uvx`, launch the MCP server, install the SDK, manage isolated global tools, and
+provide `uvx` for the URL download workflow.
 
 Install `uv` on macOS or Linux:
 
@@ -46,7 +46,13 @@ Run the CLI without permanently installing it:
 uvx aiornot image single path/to/image.jpg
 ```
 
-Or add the SDK to a Python project:
+Or run the MCP server:
+
+```bash
+uvx --from "aiornot[mcp]" aiornot-mcp
+```
+
+For Python application code, add the SDK to your project:
 
 ```bash
 uv add aiornot
@@ -91,125 +97,17 @@ Click `Create Token`, then copy the token immediately.
 
 Supported authentication methods:
 
-- **Python SDK**: reads `AIORNOT_API_KEY`, or accepts `Client(api_key=...)`.
-  Setting `AIORNOT_API_KEY` in the environment is usually simplest.
 - **CLI**: reads `AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or
   `~/.aiornot/config.json`. Run `uvx aiornot token config` to save a token for
   CLI use.
 - **MCP server**: reads `AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or
   `~/.aiornot/config.json`. Passing `AIORNOT_API_KEY` in the MCP config keeps
   the setup explicit.
-
-For the Python SDK, the environment variable is usually simplest:
-
-```bash
-export AIORNOT_API_KEY=your_api_key
-```
-
-You can also pass the token directly:
-
-```python
-from aiornot import AsyncClient, Client
-
-client = Client(api_key="your_api_token")
-async_client = AsyncClient(api_key="your_api_token")
-```
+- **Python SDK**: reads `AIORNOT_API_KEY`, or accepts `Client(api_key=...)`.
+  Setting `AIORNOT_API_KEY` in the environment is usually simplest.
 
 If no token is available, requests that require authentication raise a runtime
 error.
-
-## Python SDK Usage
-
-### Sync Client
-
-```python
-from aiornot import Client
-
-client = Client()
-
-# Check your token
-token_status = client.check_token()
-
-# Check if the API is up
-if client.is_live():
-    print("API is up!")
-
-# Classify an image by path
-image_resp = client.image_report_by_file_sync("path/to/image.jpg")
-
-# Classify text
-text_resp = client.text_report_sync("Text to analyze")
-
-# Classify video, voice, or music by path
-video_resp = client.video_report_by_file_sync("path/to/video.mp4")
-voice_resp = client.voice_report_by_file_sync("path/to/voice.mp3")
-music_resp = client.music_report_by_file_sync("path/to/music.mp3")
-
-print(image_resp.report.ai_generated.verdict)
-print(image_resp.report.ai_generated.ai.confidence)
-```
-
-### Async Client
-
-The async client has the same method names as the sync client, but each request
-method is awaited.
-
-```python
-import asyncio
-
-from aiornot import AsyncClient
-
-
-async def main():
-    client = AsyncClient()
-
-    if await client.is_live():
-        print("API is up!")
-
-    image_resp = await client.image_report_by_file_sync("path/to/image.jpg")
-    text_resp = await client.text_report_sync("Text to analyze")
-
-    print(image_resp.is_ai())
-    print(text_resp.metadata.word_count)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-### Optional Parameters
-
-Image and video analysis support optional `only` and `excluding` filters:
-
-```python
-resp = client.image_report_by_file_sync(
-    "path/to/image.jpg",
-    external_id="my-tracking-id",
-    only=["ai_generated", "deepfake"],
-    excluding=["nsfw"],
-)
-```
-
-Valid image filter values are `ai_generated`, `deepfake`, `nsfw`, `quality`, and
-`reverse_search`. Valid video filter values are `ai_video`, `ai_music`,
-`ai_voice`, and `deepfake_video`.
-
-Image, text, and video analysis also support an optional `external_id` for your
-own tracking. It is sent only when explicitly provided, and must be 36 characters
-or fewer.
-
-Text analysis supports optional annotations:
-
-```python
-text_resp = client.text_report_sync(
-    "Text to analyze",
-    include_annotations=True,
-    external_id="my-tracking-id",
-)
-```
-
-The Python client retries transient request failures by default, including HTTP
-408, 409, 425, 429, 500, 502, 503, and 504 responses.
 
 ## CLI Usage
 
@@ -398,6 +296,114 @@ The `aiornot_analyze_video_url` tool accepts `url`, `output_dir`,
 the CLI URL workflow. The `aiornot_analyze_voice_url` and
 `aiornot_analyze_music_url` tools accept `url`, `output_dir`, `max_duration`,
 and `delete_after`. The batch tools write the same JSONL records as the CLI.
+
+## Python SDK Usage
+
+For the Python SDK, the environment variable is usually simplest:
+
+```bash
+export AIORNOT_API_KEY=your_api_key
+```
+
+You can also pass the token directly:
+
+```python
+from aiornot import AsyncClient, Client
+
+client = Client(api_key="your_api_token")
+async_client = AsyncClient(api_key="your_api_token")
+```
+
+### Sync Client
+
+```python
+from aiornot import Client
+
+client = Client()
+
+# Check your token
+token_status = client.check_token()
+
+# Check if the API is up
+if client.is_live():
+    print("API is up!")
+
+# Classify an image by path
+image_resp = client.image_report_by_file_sync("path/to/image.jpg")
+
+# Classify text
+text_resp = client.text_report_sync("Text to analyze")
+
+# Classify video, voice, or music by path
+video_resp = client.video_report_by_file_sync("path/to/video.mp4")
+voice_resp = client.voice_report_by_file_sync("path/to/voice.mp3")
+music_resp = client.music_report_by_file_sync("path/to/music.mp3")
+
+print(image_resp.report.ai_generated.verdict)
+print(image_resp.report.ai_generated.ai.confidence)
+```
+
+### Async Client
+
+The async client has the same method names as the sync client, but each request
+method is awaited.
+
+```python
+import asyncio
+
+from aiornot import AsyncClient
+
+
+async def main():
+    client = AsyncClient()
+
+    if await client.is_live():
+        print("API is up!")
+
+    image_resp = await client.image_report_by_file_sync("path/to/image.jpg")
+    text_resp = await client.text_report_sync("Text to analyze")
+
+    print(image_resp.is_ai())
+    print(text_resp.metadata.word_count)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Optional Parameters
+
+Image and video analysis support optional `only` and `excluding` filters:
+
+```python
+resp = client.image_report_by_file_sync(
+    "path/to/image.jpg",
+    external_id="my-tracking-id",
+    only=["ai_generated", "deepfake"],
+    excluding=["nsfw"],
+)
+```
+
+Valid image filter values are `ai_generated`, `deepfake`, `nsfw`, `quality`, and
+`reverse_search`. Valid video filter values are `ai_video`, `ai_music`,
+`ai_voice`, and `deepfake_video`.
+
+Image, text, and video analysis also support an optional `external_id` for your
+own tracking. It is sent only when explicitly provided, and must be 36 characters
+or fewer.
+
+Text analysis supports optional annotations:
+
+```python
+text_resp = client.text_report_sync(
+    "Text to analyze",
+    include_annotations=True,
+    external_id="my-tracking-id",
+)
+```
+
+The Python client retries transient request failures by default, including HTTP
+408, 409, 425, 429, 500, 502, 503, and 504 responses.
 
 ## Response Structure
 
