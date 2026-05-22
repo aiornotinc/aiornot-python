@@ -86,6 +86,200 @@ def test_video_batch_csv_help_lists_filter_options():
     assert "--excluding" in result.output
 
 
+def test_video_from_url_uses_default_duration_and_retains_download(monkeypatch):
+    calls = []
+
+    def fake_analyze_video_url(
+        url,
+        output_dir,
+        max_duration,
+        delete_after,
+        external_id=None,
+        only=None,
+        excluding=None,
+    ):
+        calls.append(
+            {
+                "url": url,
+                "output_dir": str(output_dir),
+                "max_duration": max_duration,
+                "delete_after": delete_after,
+                "external_id": external_id,
+                "only": only,
+                "excluding": excluding,
+            }
+        )
+        return {
+            "download": {
+                "url": url,
+                "path": "aiornot-downloads/Sample [abc123].mp4",
+                "deleted": False,
+                "max_duration": max_duration,
+            },
+            "response": {"id": "vid-1", "external_id": external_id},
+        }
+
+    monkeypatch.setattr(
+        "aiornot.cli.operations.analyze_video_url", fake_analyze_video_url
+    )
+
+    result = CliRunner().invoke(
+        cli,
+        [
+            "video",
+            "from-url",
+            "https://example.com/watch?v=abc123",
+            "--external-id",
+            "ext-1",
+            "--only",
+            "ai_video",
+            "--excluding",
+            "deepfake_video",
+        ],
+        env={"AIORNOT_API_KEY": "test-token"},
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "url": "https://example.com/watch?v=abc123",
+            "output_dir": "aiornot-downloads",
+            "max_duration": 120,
+            "delete_after": False,
+            "external_id": "ext-1",
+            "only": ["ai_video"],
+            "excluding": ["deepfake_video"],
+        }
+    ]
+    assert json.loads(result.output)["download"]["deleted"] is False
+
+
+def test_video_from_url_allows_delete_after_and_custom_duration(monkeypatch):
+    calls = []
+
+    def fake_analyze_video_url(
+        url,
+        output_dir,
+        max_duration,
+        delete_after,
+        external_id=None,
+        only=None,
+        excluding=None,
+    ):
+        calls.append({"max_duration": max_duration, "delete_after": delete_after})
+        return {
+            "download": {
+                "url": url,
+                "path": "aiornot-downloads/Sample [abc123].mp4",
+                "deleted": True,
+                "max_duration": max_duration,
+            },
+            "response": {"id": "vid-1"},
+        }
+
+    monkeypatch.setattr(
+        "aiornot.cli.operations.analyze_video_url", fake_analyze_video_url
+    )
+
+    result = CliRunner().invoke(
+        cli,
+        [
+            "video",
+            "from-url",
+            "https://example.com/watch?v=abc123",
+            "--max-duration",
+            "300",
+            "--delete-after",
+        ],
+        env={"AIORNOT_API_KEY": "test-token"},
+    )
+
+    assert result.exit_code == 0
+    assert calls == [{"max_duration": 300, "delete_after": True}]
+    assert json.loads(result.output)["download"]["max_duration"] == 300
+
+
+def test_voice_from_url_uses_audio_default_duration_and_retains_download(monkeypatch):
+    calls = []
+
+    def fake_analyze_voice_url(url, output_dir, max_duration, delete_after):
+        calls.append(
+            {
+                "url": url,
+                "output_dir": str(output_dir),
+                "max_duration": max_duration,
+                "delete_after": delete_after,
+            }
+        )
+        return {
+            "download": {
+                "url": url,
+                "path": "aiornot-downloads/Sample [abc123].webm",
+                "deleted": False,
+                "max_duration": max_duration,
+            },
+            "response": {"id": "voice-1"},
+        }
+
+    monkeypatch.setattr(
+        "aiornot.cli.operations.analyze_voice_url", fake_analyze_voice_url
+    )
+
+    result = CliRunner().invoke(
+        cli,
+        ["voice", "from-url", "https://example.com/watch?v=abc123"],
+        env={"AIORNOT_API_KEY": "test-token"},
+    )
+
+    assert result.exit_code == 0
+    assert calls == [
+        {
+            "url": "https://example.com/watch?v=abc123",
+            "output_dir": "aiornot-downloads",
+            "max_duration": 3600,
+            "delete_after": False,
+        }
+    ]
+    assert json.loads(result.output)["download"]["max_duration"] == 3600
+
+
+def test_music_from_url_allows_delete_after_and_custom_duration(monkeypatch):
+    calls = []
+
+    def fake_analyze_music_url(url, output_dir, max_duration, delete_after):
+        calls.append({"max_duration": max_duration, "delete_after": delete_after})
+        return {
+            "download": {
+                "url": url,
+                "path": "aiornot-downloads/Sample [abc123].m4a",
+                "deleted": True,
+                "max_duration": max_duration,
+            },
+            "response": {"id": "music-1"},
+        }
+
+    monkeypatch.setattr(
+        "aiornot.cli.operations.analyze_music_url", fake_analyze_music_url
+    )
+
+    result = CliRunner().invoke(
+        cli,
+        [
+            "music",
+            "from-url",
+            "https://example.com/watch?v=abc123",
+            "--max-duration",
+            "7200",
+            "--delete-after",
+        ],
+        env={"AIORNOT_API_KEY": "test-token"},
+    )
+
+    assert result.exit_code == 0
+    assert calls == [{"max_duration": 7200, "delete_after": True}]
+    assert json.loads(result.output)["download"]["deleted"] is True
+
+
 def test_token_help_only_lists_current_commands():
     result = CliRunner().invoke(cli, ["token", "--help"])
 

@@ -286,6 +286,49 @@ def video_single(source, external_id, only, excluding):
     )
 
 
+@video.command("from-url")
+@click.argument("url")
+@click.option(
+    "--output-dir",
+    default=operations.DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    type=click.Path(file_okay=False, path_type=Path),
+    show_default=True,
+    help="Directory where the downloaded video is retained",
+)
+@click.option(
+    "--max-duration",
+    default=operations.DEFAULT_VIDEO_URL_MAX_DURATION_SECONDS,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Maximum seconds to download before analysis; use 0 for the full video",
+)
+@click.option(
+    "--delete-after",
+    is_flag=True,
+    help="Delete the downloaded video after analysis",
+)
+@click.option("--external-id", help="External ID for tracking")
+@click.option("--only", multiple=True, help="Only include specific analysis types")
+@click.option("--excluding", multiple=True, help="Exclude specific analysis types")
+def video_from_url(
+    url, output_dir, max_duration, delete_after, external_id, only, excluding
+):
+    """
+    Download and analyze a video URL.
+    """
+    _print_record_as_json(
+        operations.analyze_video_url(
+            url,
+            output_dir=output_dir,
+            max_duration=max_duration,
+            delete_after=delete_after,
+            external_id=external_id,
+            only=_option_list(only),
+            excluding=_option_list(excluding),
+        )
+    )
+
+
 @video.command("batch-csv")
 @click.argument(
     "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
@@ -377,6 +420,41 @@ def voice_single(source):
     _print_record_as_json(operations.analyze_voice_file(source, client=client))
 
 
+@voice.command("from-url")
+@click.argument("url")
+@click.option(
+    "--output-dir",
+    default=operations.DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    type=click.Path(file_okay=False, path_type=Path),
+    show_default=True,
+    help="Directory where the downloaded audio is retained",
+)
+@click.option(
+    "--max-duration",
+    default=operations.DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Maximum seconds to download before analysis; use 0 for the full audio",
+)
+@click.option(
+    "--delete-after",
+    is_flag=True,
+    help="Delete the downloaded audio after analysis",
+)
+def voice_from_url(url, output_dir, max_duration, delete_after):
+    """
+    Download and analyze audio from a URL as voice.
+    """
+    _print_record_as_json(
+        operations.analyze_voice_url(
+            url,
+            output_dir=output_dir,
+            max_duration=max_duration,
+            delete_after=delete_after,
+        )
+    )
+
+
 @voice.command("batch-csv")
 @click.argument(
     "csv_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
@@ -429,6 +507,41 @@ def music_single(source):
     """
     client = Client(_load_api_key())
     _print_record_as_json(operations.analyze_music_file(source, client=client))
+
+
+@music.command("from-url")
+@click.argument("url")
+@click.option(
+    "--output-dir",
+    default=operations.DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    type=click.Path(file_okay=False, path_type=Path),
+    show_default=True,
+    help="Directory where the downloaded audio is retained",
+)
+@click.option(
+    "--max-duration",
+    default=operations.DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+    type=click.IntRange(min=0),
+    show_default=True,
+    help="Maximum seconds to download before analysis; use 0 for the full audio",
+)
+@click.option(
+    "--delete-after",
+    is_flag=True,
+    help="Delete the downloaded audio after analysis",
+)
+def music_from_url(url, output_dir, max_duration, delete_after):
+    """
+    Download and analyze audio from a URL as music.
+    """
+    _print_record_as_json(
+        operations.analyze_music_url(
+            url,
+            output_dir=output_dir,
+            max_duration=max_duration,
+            delete_after=delete_after,
+        )
+    )
 
 
 @music.command("batch-csv")

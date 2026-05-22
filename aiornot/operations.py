@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 import os
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional
@@ -27,6 +28,10 @@ IMAGE_EXTENSIONS = {
 TEXT_EXTENSIONS = {".csv", ".html", ".json", ".jsonl", ".md", ".rtf", ".text", ".txt"}
 VIDEO_EXTENSIONS = {".avi", ".m4v", ".mkv", ".mov", ".mp4", ".webm"}
 AUDIO_EXTENSIONS = {".aac", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".webm"}
+DEFAULT_VIDEO_URL_OUTPUT_DIR = Path("aiornot-downloads")
+DEFAULT_VIDEO_URL_MAX_DURATION_SECONDS = 120
+DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS = 3600
+VIDEO_URL_OUTPUT_TEMPLATE = "%(title).200B [%(id)s].%(ext)s"
 
 
 class MissingApiKeyError(RuntimeError):
@@ -193,6 +198,180 @@ def analyze_video_file(
             excluding=excluding,
         )
     )
+
+
+def analyze_video_url(
+    url: str,
+    output_dir: str | Path = DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    max_duration: int = DEFAULT_VIDEO_URL_MAX_DURATION_SECONDS,
+    delete_after: bool = False,
+    external_id: Optional[str] = None,
+    only: Optional[List[str]] = None,
+    excluding: Optional[List[str]] = None,
+    client: Optional[Client] = None,
+) -> Dict[str, object]:
+    client = client or client_from_config()
+    downloaded_path = download_video_url(
+        url,
+        output_dir=output_dir,
+        max_duration=max_duration,
+    )
+    deleted = False
+    try:
+        response = client.video_report_by_file_sync(
+            require_file(downloaded_path),
+            external_id=external_id,
+            only=only,
+            excluding=excluding,
+        )
+    finally:
+        if delete_after and downloaded_path.exists():
+            downloaded_path.unlink()
+            deleted = True
+
+    return {
+        "download": {
+            "url": url,
+            "path": str(downloaded_path),
+            "deleted": deleted,
+            "max_duration": max_duration,
+        },
+        "response": model_to_record(response),
+    }
+
+
+def analyze_voice_url(
+    url: str,
+    output_dir: str | Path = DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    max_duration: int = DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+    delete_after: bool = False,
+    client: Optional[Client] = None,
+) -> Dict[str, object]:
+    client = client or client_from_config()
+    return _analyze_audio_url(
+        url,
+        output_dir=output_dir,
+        max_duration=max_duration,
+        delete_after=delete_after,
+        analyze=client.voice_report_by_file_sync,
+    )
+
+
+def analyze_music_url(
+    url: str,
+    output_dir: str | Path = DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    max_duration: int = DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+    delete_after: bool = False,
+    client: Optional[Client] = None,
+) -> Dict[str, object]:
+    client = client or client_from_config()
+    return _analyze_audio_url(
+        url,
+        output_dir=output_dir,
+        max_duration=max_duration,
+        delete_after=delete_after,
+        analyze=client.music_report_by_file_sync,
+    )
+
+
+def _analyze_audio_url(
+    url: str,
+    output_dir: str | Path,
+    max_duration: int,
+    delete_after: bool,
+    analyze: Callable[[Path], BaseModel],
+) -> Dict[str, object]:
+    downloaded_path = download_audio_url(
+        url,
+        output_dir=output_dir,
+        max_duration=max_duration,
+    )
+    deleted = False
+    try:
+        response = analyze(require_file(downloaded_path))
+    finally:
+        if delete_after and downloaded_path.exists():
+            downloaded_path.unlink()
+            deleted = True
+
+    return {
+        "download": {
+            "url": url,
+            "path": str(downloaded_path),
+            "deleted": deleted,
+            "max_duration": max_duration,
+        },
+        "response": model_to_record(response),
+    }
+
+
+def download_video_url(
+    url: str,
+    output_dir: str | Path = DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    max_duration: int = DEFAULT_VIDEO_URL_MAX_DURATION_SECONDS,
+) -> Path:
+    return _download_url(
+        url,
+        output_dir=output_dir,
+        max_duration=max_duration,
+        format_selector="bv*+ba/b",
+    )
+
+
+def download_audio_url(
+    url: str,
+    output_dir: str | Path = DEFAULT_VIDEO_URL_OUTPUT_DIR,
+    max_duration: int = DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+) -> Path:
+    return _download_url(
+        url,
+        output_dir=output_dir,
+        max_duration=max_duration,
+        format_selector="ba",
+    )
+
+
+def _download_url(
+    url: str,
+    output_dir: str | Path,
+    max_duration: int,
+    format_selector: str,
+) -> Path:
+    if max_duration < 0:
+        raise ValueError("max_duration must be 0 or greater")
+
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        "uvx",
+        "yt-dlp@latest",
+        "-f",
+        format_selector,
+        "--no-playlist",
+        "--paths",
+        str(output_path),
+        "-o",
+        VIDEO_URL_OUTPUT_TEMPLATE,
+        "--print",
+        "after_move:filepath",
+    ]
+    if max_duration > 0:
+        cmd.extend(["--download-sections", f"*0:00-{max_duration}"])
+    cmd.append(url)
+
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "`uvx` is required to download videos from URLs. Install uv from "
+            "https://docs.astral.sh/uv/ and retry."
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        message = (exc.stderr or exc.stdout or str(exc)).strip()
+        raise RuntimeError(f"yt-dlp failed: {message}") from exc
+
+    downloaded_path = _downloaded_path_from_yt_dlp_output(result.stdout)
+    return require_file(downloaded_path)
 
 
 def analyze_voice_file(
@@ -427,6 +606,14 @@ def error_record(exc: Exception) -> Dict[str, object]:
         error["status_code"] = exc.response.status_code
         error["response"] = _response_body(exc)
     return error
+
+
+def _downloaded_path_from_yt_dlp_output(stdout: str) -> Path:
+    for line in reversed(stdout.splitlines()):
+        value = line.strip()
+        if value:
+            return Path(value).expanduser()
+    raise RuntimeError("yt-dlp did not report a downloaded file path")
 
 
 def _response_body(exc: HTTPStatusError) -> object:

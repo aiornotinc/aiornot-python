@@ -85,14 +85,65 @@ def _register_tools(mcp) -> None:
         )
 
     @mcp.tool()
+    def aiornot_analyze_video_url(
+        url: str,
+        output_dir: str = str(operations.DEFAULT_VIDEO_URL_OUTPUT_DIR),
+        max_duration: int = operations.DEFAULT_VIDEO_URL_MAX_DURATION_SECONDS,
+        delete_after: bool = False,
+        external_id: Optional[str] = None,
+        only: Optional[List[str]] = None,
+        excluding: Optional[List[str]] = None,
+    ) -> dict:
+        """Download and analyze a video URL with AIORNOT."""
+        return operations.analyze_video_url(
+            url,
+            output_dir=output_dir,
+            max_duration=max_duration,
+            delete_after=delete_after,
+            external_id=external_id,
+            only=only,
+            excluding=excluding,
+        )
+
+    @mcp.tool()
     def aiornot_analyze_voice_file(path: str) -> dict:
         """Analyze a local voice audio file with AIORNOT."""
         return operations.analyze_voice_file(path)
 
     @mcp.tool()
+    def aiornot_analyze_voice_url(
+        url: str,
+        output_dir: str = str(operations.DEFAULT_VIDEO_URL_OUTPUT_DIR),
+        max_duration: int = operations.DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+        delete_after: bool = False,
+    ) -> dict:
+        """Download audio from a URL and analyze it as voice with AIORNOT."""
+        return operations.analyze_voice_url(
+            url,
+            output_dir=output_dir,
+            max_duration=max_duration,
+            delete_after=delete_after,
+        )
+
+    @mcp.tool()
     def aiornot_analyze_music_file(path: str) -> dict:
         """Analyze a local music audio file with AIORNOT."""
         return operations.analyze_music_file(path)
+
+    @mcp.tool()
+    def aiornot_analyze_music_url(
+        url: str,
+        output_dir: str = str(operations.DEFAULT_VIDEO_URL_OUTPUT_DIR),
+        max_duration: int = operations.DEFAULT_AUDIO_URL_MAX_DURATION_SECONDS,
+        delete_after: bool = False,
+    ) -> dict:
+        """Download audio from a URL and analyze it as music with AIORNOT."""
+        return operations.analyze_music_url(
+            url,
+            output_dir=output_dir,
+            max_duration=max_duration,
+            delete_after=delete_after,
+        )
 
     @mcp.tool()
     def aiornot_batch_csv(
