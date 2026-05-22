@@ -1,4 +1,3 @@
-![AIORNOT Logo](./media/centered_logo_32x32.png)
 # AIORNOT Python Client
 
 ![Tests](https://github.com/aiornotinc/aiornot-python/actions/workflows/test.yaml/badge.svg)
