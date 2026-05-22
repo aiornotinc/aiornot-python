@@ -4,98 +4,251 @@
 [![PyPI version](https://badge.fury.io/py/aiornot.svg)](https://badge.fury.io/py/aiornot)
 [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v2/monitor/y3x3.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
-This is a Python client for the [AIORNOT](https://aiornot.com) API.
+Python SDK, CLI, and MCP server for the [AIORNOT](https://aiornot.com) API.
 
-# Getting Started
+AIORNOT supports image, text, video, voice, and music analysis. Use the Python
+client in your application code, the CLI for local files and batch workflows, or
+the MCP server to expose the same analysis tools to MCP-compatible clients.
 
-## Account Registration and API Key Generation
+## Quick Start
 
-Register for an account at [AIORNOT](https://aiornot.com). After creating an account,
-you can generate an API token via your [dashboard](https://aiornot.com/dashboard/api).
+AIORNOT requires Python 3.9 or newer. The MCP server requires Python 3.10 or newer.
 
-Click the `Create New API Token` button. A dialog opens where you can configure the token:
+We recommend [uv](https://docs.astral.sh/uv/) because it can install the SDK,
+run the CLI with `uvx`, manage isolated global tools, and provide `uvx` for the
+URL download workflow.
 
-![](./media/create_token.png)
-
-- **Token Name (Optional)** — a label to help you identify the token later (e.g. `cli-token`).
-- **Set custom expiration date** — check this to choose your own expiration date. Tokens
-  expire in 5 years by default; if you set a custom date, it must be in the future.
-
-Click `Create Token` to generate the token, then copy it to your clipboard.
-
-> [!WARNING]  
-> Never share your API token with anyone. It is like a password. Copy it as soon as it is
-> created, since you will not be able to view it again afterwards.
-
-## Installing the Python Package
-
-To install the python package, run the following command,
+Install `uv` on macOS or Linux:
 
 ```bash
-# If using uv (recommended)
-uv add aiornot
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-# If using pip
+On Windows:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+See the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/)
+for package manager options such as Homebrew, pipx, and pip.
+
+Get an API token from the [AIORNOT dashboard](https://aiornot.com/dashboard/api),
+then set it for your current shell:
+
+```bash
+export AIORNOT_API_KEY=your_api_key
+```
+
+Run the CLI without permanently installing it:
+
+```bash
+uvx aiornot image single path/to/image.jpg
+```
+
+Or add the SDK to a Python project:
+
+```bash
+uv add aiornot
+```
+
+```python
+from aiornot import Client
+
+client = Client()
+resp = client.image_report_by_file_sync("path/to/image.jpg")
+
+print(resp.report.ai_generated.verdict)
+print(resp.report.ai_generated.ai.confidence)
+```
+
+Prefer `pip` instead:
+
+```bash
 pip install aiornot
 ```
 
-Using the client requires an API token. You can set the API token in two ways.
+## Authentication
 
-The easier and more flexible way is to set an environment variable,
+Using AIORNOT requires an API token. Register at [AIORNOT](https://aiornot.com),
+then generate a token from your [dashboard](https://aiornot.com/dashboard/api).
+
+Click `Create New API Token`. A dialog opens where you can configure the token:
+
+![Create API token dialog](./media/create_token.png)
+
+- **Token Name (Optional)**: a label to help you identify the token later, such
+  as `cli-token`.
+- **Set custom expiration date**: check this to choose your own expiration date.
+  Tokens expire in 5 years by default; custom expiration dates must be in the
+  future.
+
+Click `Create Token`, then copy the token immediately.
+
+> [!WARNING]
+> Never share your API token with anyone. It is like a password. Copy it as soon
+> as it is created, since you will not be able to view it again afterwards.
+
+Supported authentication methods:
+
+- **Python SDK**: reads `AIORNOT_API_KEY`, or accepts `Client(api_key=...)`.
+  Setting `AIORNOT_API_KEY` in the environment is usually simplest.
+- **CLI**: reads `AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or
+  `~/.aiornot/config.json`. Run `uvx aiornot token config` to save a token for
+  CLI use.
+- **MCP server**: reads `AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or
+  `~/.aiornot/config.json`. Passing `AIORNOT_API_KEY` in the MCP config keeps
+  the setup explicit.
+
+For the Python SDK, the environment variable is usually simplest:
 
 ```bash
-AIORNOT_API_KEY=your_api_key
+export AIORNOT_API_KEY=your_api_key
 ```
 
-Otherwise, you can pass the API token in as an argument to the client,
+You can also pass the token directly:
 
 ```python
-from aiornot import Client, AsyncClient
+from aiornot import AsyncClient, Client
 
-
-client = Client(api_key='your_api_token')               # sync client
-async_client = AsyncClient(api_key='your_api_token')    # async client
+client = Client(api_key="your_api_token")
+async_client = AsyncClient(api_key="your_api_token")
 ```
 
-Failure to set either the environment variable or the API token argument will result in a runtime error.
+If no token is available, requests that require authentication raise a runtime
+error.
+
+## Python SDK Usage
+
+### Sync Client
+
+```python
+from aiornot import Client
+
+client = Client()
+
+# Check your token
+token_status = client.check_token()
+
+# Check if the API is up
+if client.is_live():
+    print("API is up!")
+
+# Classify an image by path
+image_resp = client.image_report_by_file_sync("path/to/image.jpg")
+
+# Classify text
+text_resp = client.text_report_sync("Text to analyze")
+
+# Classify video, voice, or music by path
+video_resp = client.video_report_by_file_sync("path/to/video.mp4")
+voice_resp = client.voice_report_by_file_sync("path/to/voice.mp3")
+music_resp = client.music_report_by_file_sync("path/to/music.mp3")
+
+print(image_resp.report.ai_generated.verdict)
+print(image_resp.report.ai_generated.ai.confidence)
+```
+
+### Async Client
+
+The async client has the same method names as the sync client, but each request
+method is awaited.
+
+```python
+import asyncio
+
+from aiornot import AsyncClient
+
+
+async def main():
+    client = AsyncClient()
+
+    if await client.is_live():
+        print("API is up!")
+
+    image_resp = await client.image_report_by_file_sync("path/to/image.jpg")
+    text_resp = await client.text_report_sync("Text to analyze")
+
+    print(image_resp.is_ai())
+    print(text_resp.metadata.word_count)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Optional Parameters
+
+Image and video analysis support optional `only` and `excluding` filters:
+
+```python
+resp = client.image_report_by_file_sync(
+    "path/to/image.jpg",
+    external_id="my-tracking-id",
+    only=["ai_generated", "deepfake"],
+    excluding=["nsfw"],
+)
+```
+
+Valid image filter values are `ai_generated`, `deepfake`, `nsfw`, `quality`, and
+`reverse_search`. Valid video filter values are `ai_video`, `ai_music`,
+`ai_voice`, and `deepfake_video`.
+
+Image, text, and video analysis also support an optional `external_id` for your
+own tracking. It is sent only when explicitly provided, and must be 36 characters
+or fewer.
+
+Text analysis supports optional annotations:
+
+```python
+text_resp = client.text_report_sync(
+    "Text to analyze",
+    include_annotations=True,
+    external_id="my-tracking-id",
+)
+```
+
+The Python client retries transient request failures by default, including HTTP
+408, 409, 425, 429, 500, 502, 503, and 504 responses.
 
 ## CLI Usage
 
-AIOrNot also comes with a CLI. You can use it easily via [uv](https://docs.astral.sh/uv/),
+The `aiornot` package includes a CLI. The easiest way to use it is with `uvx`,
+which runs the latest package in an isolated environment:
 
 ```bash
-# For fresh install
 uvx aiornot
+```
 
-# Or install globally
+For repeated use, install it as a global uv tool:
+
+```bash
 uv tool install aiornot
+```
 
-# For upgrade
+Upgrade the global tool later with:
+
+```bash
 uv tool upgrade aiornot
 ```
 
-The CLI looks for `AIORNOT_API_KEY` or `AIORNOT_API_TOKEN`. It will also look
-for a `~/.aiornot/config.json` file if neither environment variable is set. To
-set it up, run the following command,
+Configure a saved CLI token:
 
 ```bash
 uvx aiornot token config
 ```
 
-and follow the prompts. Afterwards, you can see a menu of commands with,
+After configuration, list available commands:
 
 ```bash
 uvx aiornot
 ```
 
-Common commands:
+### Common CLI Commands
 
 ```bash
 # Classify an image by path
 uvx aiornot image single path/to/image.jpg
-
-# With optional parameters
-uvx aiornot image single path/to/image.jpg --external-id my-id --only ai_generated --only deepfake
 
 # Classify text from a file or stdin
 uvx aiornot text single path/to/text.txt
@@ -103,29 +256,73 @@ cat path/to/text.txt | uvx aiornot text single -
 
 # Classify a video by path
 uvx aiornot video single path/to/video.mp4
-uvx aiornot video single path/to/video.mp4 --only ai_video --only deepfake_video
-
-# Download the first ~120 seconds of a video URL, classify it, and keep the file
-uvx aiornot video from-url "https://example.com/video"
-
-# Choose a different cap, download the full video, or delete the download afterwards
-uvx aiornot video from-url "https://example.com/video" --max-duration 300
-uvx aiornot video from-url "https://example.com/video" --max-duration 0
-uvx aiornot video from-url "https://example.com/video" --delete-after
 
 # Classify voice or music audio by path
 uvx aiornot voice single path/to/voice.mp3
 uvx aiornot music single path/to/music.mp3
+```
+
+Each media command supports a `single` subcommand. Image, text, video, voice, and
+music also support batch workflows.
+
+### CLI Filters
+
+Use `--only` to request specific analysis types, or `--excluding` to skip
+specific analysis types:
+
+```bash
+uvx aiornot image single path/to/image.jpg \
+  --external-id my-id \
+  --only ai_generated \
+  --only deepfake
+uvx aiornot video single path/to/video.mp4 --only ai_video --only deepfake_video
+```
+
+### URL Downloads
+
+Video, voice, and music commands can download media from a URL before analysis:
+
+```bash
+# Download the first ~120 seconds of a video URL, classify it, and keep the file
+uvx aiornot video from-url "https://example.com/video"
 
 # Download the first ~1 hour of audio from a URL, classify it, and keep the file
 uvx aiornot voice from-url "https://example.com/video-or-audio"
 uvx aiornot music from-url "https://example.com/video-or-audio"
+```
 
-# Choose a different cap, download the full audio, or delete the download afterwards
-uvx aiornot voice from-url "https://example.com/video-or-audio" --max-duration 1800
+URL workflows shell out to `uvx yt-dlp@latest`, so `uvx` must be available on
+`PATH`. Video downloads ask yt-dlp for the best available video and audio format.
+Voice and music downloads request the best audio-only format.
+
+Useful URL options:
+
+```bash
+# Choose a different video duration cap
+uvx aiornot video from-url "https://example.com/video" --max-duration 300
+
+# Download the full video or audio
+uvx aiornot video from-url "https://example.com/video" --max-duration 0
 uvx aiornot music from-url "https://example.com/video-or-audio" --max-duration 0
-uvx aiornot music from-url "https://example.com/video-or-audio" --delete-after
 
+# Delete the downloaded file after analysis
+uvx aiornot video from-url "https://example.com/video" --delete-after
+uvx aiornot music from-url "https://example.com/video-or-audio" --delete-after
+```
+
+Retained downloads are written under `aiornot-downloads/` by default using a
+readable title-and-id filename. Video URL downloads default to `--max-duration
+120`; voice and music URL downloads default to `--max-duration 3600`. Duration
+limiting uses yt-dlp/ffmpeg download sections without forcing a re-encode, so
+cuts may align to keyframe or container boundaries rather than being exact to
+the millisecond.
+
+### Batch CLI Workflows
+
+Batch commands append JSONL records with an `input` object for correlation, an
+`ok` flag, and either a `response` object or an `error` object.
+
+```bash
 # Batch from CSV files. The CSV should include a path column by default.
 uvx aiornot image batch-csv images.csv --output image-results.jsonl
 uvx aiornot text batch-csv texts.csv --output text-results.jsonl
@@ -137,48 +334,29 @@ uvx aiornot voice batch-scan ./voice --output voice-results.jsonl
 uvx aiornot music batch-scan ./music --output music-results.jsonl
 
 # Generate stable external IDs from scanned relative paths.
-uvx aiornot image batch-scan ./images --output image-results.jsonl --use-relpath-md5-as-external-id
+uvx aiornot image batch-scan ./images \
+  --output image-results.jsonl \
+  --use-relpath-md5-as-external-id
 ```
 
-Each media command has `single`, `batch-csv`, and `batch-scan` subcommands. Video,
-voice, and music also have `from-url` subcommands. Batch commands append JSONL
-records with an `input` object for correlation, an `ok` flag, and either a `response`
-object or an `error` object. CSV batches use `path`, `source`, or `file` columns for
-files; text CSV batches can also use a `text` column for literal text. Optional CSV
-columns include `id` and `external_id`; `external_id` must be 36 characters or fewer.
-Image and video CSV batches can also include `only` and `excluding` columns. Text CSV
-batches can include `include_annotations`.
+CSV batches use `path`, `source`, or `file` columns for files. Text CSV batches
+can also use a `text` column for literal text. Optional CSV columns include `id`
+and `external_id`; `external_id` must be 36 characters or fewer. Image and video
+CSV batches can also include `only` and `excluding` columns. Text CSV batches can
+include `include_annotations`.
 
 For `batch-scan`, external IDs are not generated by default. Pass
 `--use-relpath-md5-as-external-id` to send the MD5 hex digest of each file's
 relative path as its external ID.
 
-`video from-url` shells out to `uvx yt-dlp@latest`, so `uvx` must be available
-on `PATH`. It asks yt-dlp for the best available video and audio format, downloads
-only the current video rather than a playlist, and writes the retained file under
-`aiornot-downloads/` by default using a readable title-and-id filename. The default
-`--max-duration` is `120` seconds; pass `--max-duration 0` to download the full
-video. Duration limiting uses yt-dlp/ffmpeg download sections without forcing a
-re-encode, so cuts may align to keyframe or container boundaries rather than being
-exact to the millisecond. Pass `--delete-after` to remove the downloaded file after
-analysis.
-
-`voice from-url` and `music from-url` use the same `uvx yt-dlp@latest` flow, but
-request only yt-dlp's best audio-only format. They default to `--max-duration 3600`
-seconds. Pass `--max-duration 0` to download the full audio and `--delete-after` to
-remove the downloaded file after analysis.
-
-The client retries transient request failures by default, including HTTP 408, 409,
-425, 429, 500, 502, 503, and 504 responses.
-
 ## MCP Server
 
-AIORNOT can also run as a local stdio MCP server for clients that support the
-Model Context Protocol. The MCP server requires Python 3.10 or newer, exposes
-the same analysis operations as the CLI, and reads the API key from
-`AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or `~/.aiornot/config.json`.
+AIORNOT can run as a local stdio MCP server for clients that support the Model
+Context Protocol. The MCP server exposes the same analysis operations as the CLI
+and reads the API key from `AIORNOT_API_KEY`, `AIORNOT_API_TOKEN`, or
+`~/.aiornot/config.json`.
 
-Install the optional MCP dependencies when running the server:
+Run the MCP server with the optional MCP dependencies:
 
 ```bash
 uvx --from "aiornot[mcp]" aiornot-mcp
@@ -215,142 +393,46 @@ The server provides these tools:
 - `aiornot_batch_csv`
 - `aiornot_batch_scan`
 
-The `aiornot_analyze_video_url` tool accepts `url`, `output_dir`, `max_duration`,
-`delete_after`, `external_id`, `only`, and `excluding`, matching the CLI URL workflow.
-The `aiornot_analyze_voice_url` and `aiornot_analyze_music_url` tools accept `url`,
-`output_dir`, `max_duration`, and `delete_after`. The batch tools write the same JSONL
-records as the CLI.
-
-## View from 10,000 feet
-
-```python
-from aiornot import Client
-
-# Create a client (reads AIORNOT_API_KEY env)
-client = Client()
-
-# Classify an image by path
-resp = client.image_report_by_file_sync('path/to/image.jpg')
-
-# Classify voice or music audio by path
-voice_resp = client.voice_report_by_file_sync('path/to/voice.mp3')
-music_resp = client.music_report_by_file_sync('path/to/music.mp3')
-
-# Check if it's AI generated
-if resp.is_ai():
-    print("This image is AI generated")
-else:
-    print("This image is human created")
-
-# Get detailed report info
-print(f"Verdict: {resp.report.ai_generated.verdict}")
-print(f"AI confidence: {resp.report.ai_generated.ai.confidence}")
-print(f"Human confidence: {resp.report.ai_generated.human.confidence}")
-
-# Check your token
-resp = client.check_token()
-
-# Check if the API is up
-if client.is_live():
-    print('API is up!')
-```
-
-There is also an async client that has the same methods as the sync client:
-
-```python
-import asyncio
-from aiornot import AsyncClient
-
-
-async def main():
-    client = AsyncClient()
-    if await client.is_live():
-        print('API is up!')
-    else:
-        print('API is down :(')
-    
-    # Classify an image
-    resp = await client.image_report_by_file_sync('path/to/image.jpg')
-    print(f"AI generated: {resp.is_ai()}")
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
-```
-
-## Optional Parameters
-
-Image and video analysis support optional filters:
-
-```python
-# Sync client
-resp = client.image_report_by_file_sync(
-    'path/to/image.jpg',
-    external_id='my-tracking-id',  # Optional tracking ID
-    only=['ai_generated', 'deepfake'],  # Only include specific analysis types
-    excluding=['nsfw']  # Exclude specific analysis types
-)
-
-# Async client
-resp = await async_client.image_report_by_file_sync(
-    'path/to/image.jpg',
-    external_id='my-tracking-id',
-    only=['ai_generated'],
-    excluding=['nsfw', 'quality']
-)
-```
-
-Valid image filter values are `ai_generated`, `deepfake`, `nsfw`, `quality`, and
-`reverse_search`. Valid video filter values are `ai_video`, `ai_music`,
-`ai_voice`, and `deepfake_video`.
-
-Image, text, and video analysis also support an optional `external_id` for your
-own tracking. It is sent only when explicitly provided, and must be 36 characters
-or fewer.
-
-Text analysis supports optional annotations:
-
-```python
-text_resp = client.text_report_sync(
-    'Text to analyze',
-    include_annotations=True,
-    external_id='my-tracking-id',
-)
-```
+The `aiornot_analyze_video_url` tool accepts `url`, `output_dir`,
+`max_duration`, `delete_after`, `external_id`, `only`, and `excluding`, matching
+the CLI URL workflow. The `aiornot_analyze_voice_url` and
+`aiornot_analyze_music_url` tools accept `url`, `output_dir`, `max_duration`,
+and `delete_after`. The batch tools write the same JSONL records as the CLI.
 
 ## Response Structure
 
-The API returns comprehensive reports with forward compatibility (new fields can be added):
+The API returns comprehensive reports with forward compatibility. New fields can
+be added over time.
 
 ```python
 # Main response
 resp.id  # Unique report ID
 resp.created_at  # Timestamp
-resp.external_id  # Your tracking ID (if provided)
+resp.external_id  # Your tracking ID, if provided
 
-# AI Generation Detection
-resp.report.ai_generated.verdict  # 'ai', 'human', or 'unknown'
+# AI generation detection
+resp.report.ai_generated.verdict  # "ai", "human", or "unknown"
 resp.report.ai_generated.ai.is_detected  # Boolean
 resp.report.ai_generated.ai.confidence  # Float 0-1
 resp.report.ai_generated.human.is_detected  # Boolean
 resp.report.ai_generated.human.confidence  # Float 0-1
 
-# Generator probabilities (if AI detected)
+# Generator probabilities, if AI is detected
 resp.report.ai_generated.generator.midjourney  # Float or None
 resp.report.ai_generated.generator.dall_e  # Float or None
 # ... and other generators
 
-# Other analysis (if requested)
-resp.report.deepfake  # Deepfake detection
-resp.report.nsfw  # NSFW content detection
-resp.report.quality  # Image quality assessment
+# Other image analysis, if requested
+resp.report.deepfake
+resp.report.nsfw
+resp.report.quality
 
 # Image metadata
-resp.report.meta.width  # Image width
-resp.report.meta.height  # Image height
-resp.report.meta.format  # File format
-resp.report.meta.size_bytes  # File size
-resp.report.meta.md5  # MD5 hash
+resp.report.meta.width
+resp.report.meta.height
+resp.report.meta.format
+resp.report.meta.size_bytes
+resp.report.meta.md5
 
 # Text metadata is top-level
 text_resp.metadata.word_count
